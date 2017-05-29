@@ -44,21 +44,27 @@ public class SampleModule extends Module {
 		app.addDataItem(Application.DATA_GATEWAY, "total", total);
 		app.addDataItem(Application.DATA_GATEWAY, "string", persitentString);
 
+		// notification when value of data item "number" changes
 		app.subscribe(number.getId(), (message) -> {
 			System.out.println("Number changed: " + number.getValue());
 		});
 
+		// notification when value of data item "total" changes
 		app.subscribe(total.getId(), (message) -> {
 			System.out.println("Total changed: " + total.getValue());
 		});
 
+		// notification when mqtt message with value for "persistentString" is
+		// received
 		app.subscribe("mqtt/miniac/string", (message) -> {
-			System.out.println("New value for string received: " + message.getContent());
+			System.out.println("New value for \"persistentString\" received: " + message.getContent());
 			persitentString.requestChange(message.getContent());
 		});
 
+		// notification when application starts
 		app.subscribe(Application.SYSTEM_GATEWAY + "/start", (message) -> {
-			System.out.println("Initial value of persistent string: " + persitentString.getValue());
+			System.out.println("Initial value of \"persistentString\": " + persitentString.getValue());
+			System.out.println("Initial value of \"total\": " + total.getValue());
 		});
 
 		// handle received mqtt message with commands

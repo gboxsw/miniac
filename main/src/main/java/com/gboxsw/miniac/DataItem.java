@@ -134,11 +134,22 @@ public abstract class DataItem<T> {
 	}
 
 	/**
+	 * Checks whether the data item is attached to gateway. If it is not
+	 * attached, an exception is thrown.
+	 */
+	private void checkAttached() {
+		if (gateway == null) {
+			throw new IllegalStateException("Data item is not associated to application.");
+		}
+	}
+
+	/**
 	 * Returns the identifier of the data item in attached application.
 	 * 
 	 * @return the identifier of the data item.
 	 */
 	public final String getId() {
+		checkAttached();
 		return id;
 	}
 
@@ -175,6 +186,7 @@ public abstract class DataItem<T> {
 	 * @return the value.
 	 */
 	public final T getValue() {
+		checkAttached();
 		return value;
 	}
 
@@ -199,10 +211,9 @@ public abstract class DataItem<T> {
 			throw new UnsupportedOperationException("The data item is read-only. Its value cannot be changed.");
 		}
 
+		checkAttached();
 		if (gateway != null) {
 			application.pushChangeRequest(this, newValue);
-		} else {
-			throw new IllegalStateException("The data item is not associated with an application.");
 		}
 	}
 
@@ -210,6 +221,7 @@ public abstract class DataItem<T> {
 	 * Invalidates value of the data item.
 	 */
 	protected final void invalidate() {
+		checkAttached();
 		if (gateway != null) {
 			// no action if there is a pending synchronization request
 			if (synchronizationPending) {
@@ -219,8 +231,6 @@ public abstract class DataItem<T> {
 			// mark that there is a pending synchronization request
 			synchronizationPending = true;
 			application.pushSynchronizationRequest(this);
-		} else {
-			throw new IllegalStateException("The data item is not attached to an application.");
 		}
 	}
 
@@ -244,7 +254,7 @@ public abstract class DataItem<T> {
 
 	/**
 	 * Set dependencies of this data item. This method can be invoked only in
-	 * the {@link DataItem#onActivate()} method.
+	 * the {@link DataItem#onActivate(Bundle)} method.
 	 * 
 	 * @param dataItems
 	 *            data items on which this data item is dependent.
@@ -441,7 +451,7 @@ public abstract class DataItem<T> {
 	/**
 	 * Life-cycle method called by application in order to synchronize/update
 	 * value of the data item. The method is executed in the main thread of the
-	 * application instance between {@link #onActivate()} and
+	 * application instance between {@link #onActivate(Bundle)} and
 	 * {@link DataItem#onDeactivate() onDeactivate}.
 	 * 
 	 * @return the synchronized value, or null if the value is not available.
@@ -451,7 +461,7 @@ public abstract class DataItem<T> {
 	/**
 	 * Life-cycle method called by application in order to request change of
 	 * value. The method is executed in the main thread of the application
-	 * instance between {@link #onActivate()} and
+	 * instance between {@link #onActivate(Bundle)} and
 	 * {@link DataItem#onDeactivate()}.
 	 * 
 	 * @param newValue
@@ -462,7 +472,7 @@ public abstract class DataItem<T> {
 	/**
 	 * Life-cycle method called by application in order to serialize current
 	 * state of the data item. The method is executed in the main thread of the
-	 * application instance between {@link #onActivate()} and
+	 * application instance between {@link #onActivate(Bundle)} and
 	 * {@link DataItem#onDeactivate()}.
 	 * 
 	 * @param outState

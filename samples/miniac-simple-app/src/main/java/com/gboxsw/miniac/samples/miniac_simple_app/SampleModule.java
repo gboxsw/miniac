@@ -43,14 +43,14 @@ public class SampleModule extends Module {
 		app.addDataItem(Application.DATA_GATEWAY, "number", number);
 		app.addDataItem(Application.DATA_GATEWAY, "string", localString);
 
-		// notification when value of data item number changes
+		// notification when value of data item "number" changes
 		app.subscribe(number.getId(), (message) -> {
-			System.out.println("Number changed: " + number.getValue());
+			System.out.println("\"number\" changed: " + number.getValue());
 		});
 
-		// notification when value of data item localString changes
+		// notification when value of data item "localString" changes
 		app.subscribe(localString.getId(), (message) -> {
-			System.out.println("String data item changed: " + localString.getValue());
+			System.out.println("\"localString\" changed: " + localString.getValue());
 		});
 
 		// handle received mqtt message and change value of data item

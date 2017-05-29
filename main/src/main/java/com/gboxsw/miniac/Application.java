@@ -652,6 +652,10 @@ public final class Application {
 	 *            the identifier of a gateway which manages the data item.
 	 * @param id
 	 *            the identifier of data item within the gateway.
+	 * @param type
+	 *            the class of value type.
+	 * @param <T>
+	 *            the value type of data item.
 	 * @return the data item, or null, if the data item with given name does not
 	 *         exist.
 	 */
@@ -682,6 +686,10 @@ public final class Application {
 	 * 
 	 * @param id
 	 *            the identifier of data item.
+	 * @param type
+	 *            the class of value type.
+	 * @param <T>
+	 *            the value type of data item.
 	 * @return the data item, or null, if the data item with given name does not
 	 *         exist.
 	 */
@@ -899,7 +907,7 @@ public final class Application {
 	 *            the message to be published
 	 * @param initialDelay
 	 *            the time to delay first publication.
-	 * @param period
+	 * @param delay
 	 *            the delay between successive publications.
 	 * @param unit
 	 *            the time unit of the initialDelay and period parameters.

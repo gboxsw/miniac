@@ -46,8 +46,6 @@ public final class AccumulatingDataItem extends DataItem<Long> {
 	 * 
 	 * @param source
 	 *            the source data item.
-	 * @param type
-	 *            the value type of data item.
 	 */
 	public AccumulatingDataItem(DataItem<? extends Number> source) {
 		super(Long.class, true);
