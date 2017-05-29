@@ -7,6 +7,9 @@ import com.gboxsw.miniac.converters.IntToTextConverter;
 import com.gboxsw.miniac.dataitems.LocalDataItem;
 import com.gboxsw.miniac.dataitems.MsgDataItem;
 
+/**
+ * Sample module as a logical group of data items, variables and subscriptions.
+ */
 public class SampleModule extends Module {
 
 	/**
@@ -30,7 +33,7 @@ public class SampleModule extends Module {
 	 */
 	public SampleModule() {
 		number = new MsgDataItem<>("mqtt/miniac/number", "mqtt/miniac/number", new IntToTextConverter(), Integer.class);
-		localString = new LocalDataItem<>(false, String.class);
+		localString = new LocalDataItem<>(true, String.class);
 	}
 
 	@Override
@@ -57,7 +60,7 @@ public class SampleModule extends Module {
 			localString.requestChange(message.getContent());
 		});
 
-		// handle received mqtt message
+		// handle received mqtt message with commands
 		app.subscribe("mqtt/miniac/command", (message) -> {
 			String command = message.getContent();
 			System.out.println("Received command: " + command);

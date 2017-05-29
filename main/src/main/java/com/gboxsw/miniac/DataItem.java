@@ -201,6 +201,8 @@ public abstract class DataItem<T> {
 
 		if (gateway != null) {
 			application.pushChangeRequest(this, newValue);
+		} else {
+			throw new IllegalStateException("The data item is not associated with an application.");
 		}
 	}
 
@@ -490,7 +492,7 @@ public abstract class DataItem<T> {
 			String[] parsedId = Application.parseTopicHierarchy(id);
 			for (String idPart : parsedId) {
 				if (!ID_PATTERN.matcher(idPart).matches()) {
-					return false; 
+					return false;
 				}
 			}
 

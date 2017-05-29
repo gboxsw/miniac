@@ -24,7 +24,7 @@ final class SystemGateway extends Gateway {
 
 	@Override
 	protected void onStart(Map<String, Bundle> bundles) {
-		// nothing to do
+		handleReceivedMessage(new Message("start"));
 	}
 
 	@Override

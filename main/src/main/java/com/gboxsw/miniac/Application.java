@@ -1144,9 +1144,12 @@ public final class Application {
 	private List<Gateway> constructGatewayActivationOrder() {
 		List<Gateway> result = new ArrayList<>();
 
-		// add all gateways that are not data gateways
+		// add system gateway
+		result.add(systemGateway);
+
+		// add all gateways that are not data gateways (ignore system gateway)
 		for (GatewayHolder gatewayHolder : gatewayHolders.values()) {
-			if (!(gatewayHolder.gateway instanceof DataGateway)) {
+			if (!(gatewayHolder.gateway instanceof DataGateway) && !(gatewayHolder.gateway instanceof SystemGateway)) {
 				result.add(gatewayHolder.gateway);
 			}
 		}
