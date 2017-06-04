@@ -4,6 +4,9 @@ import java.io.*;
 import java.text.*;
 import java.util.*;
 import java.util.logging.*;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+
 import javax.xml.stream.*;
 
 /**
@@ -54,8 +57,13 @@ public class XMLPersistentStorage implements PersistentStorage {
 			}
 
 			XMLInputFactory xif = XMLInputFactory.newInstance();
-			try (Reader fileReader = new FileReader(xmlFile)) {
-				XMLStreamReader xmlReader = xif.createXMLStreamReader(fileReader);
+			try (InputStream fileStream = new FileInputStream(xmlFile)) {
+				InputStream input = new BufferedInputStream(fileStream);
+				if (xmlFile.getName().endsWith(".gz")) {
+					input = new GZIPInputStream(input);
+				}
+
+				XMLStreamReader xmlReader = xif.createXMLStreamReader(input);
 				if (xmlReader.nextTag() == XMLStreamConstants.START_ELEMENT) {
 					return readXmlStorage(xmlReader);
 				}
@@ -189,8 +197,13 @@ public class XMLPersistentStorage implements PersistentStorage {
 
 		try {
 			XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
-			try (FileWriter writer = new FileWriter(xmlFile)) {
-				XMLStreamWriter xmlWriter = outputFactory.createXMLStreamWriter(writer);
+			try (FileOutputStream fileOutput = new FileOutputStream(xmlFile)) {
+				OutputStream output = new BufferedOutputStream(fileOutput);
+				if (xmlFile.getName().endsWith(".gz")) {
+					output = new GZIPOutputStream(output);
+				}
+				
+				XMLStreamWriter xmlWriter = outputFactory.createXMLStreamWriter(output);
 				xmlWriter.writeStartDocument();
 				xmlWriter.writeStartElement(ROOT_ELEMENT);
 
@@ -214,6 +227,7 @@ public class XMLPersistentStorage implements PersistentStorage {
 				xmlWriter.writeEndDocument();
 				xmlWriter.flush();
 				xmlWriter.close();
+				output.flush();
 			}
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Saving xml formatted data to the file \"" + xmlFile + "\" failed.", e);

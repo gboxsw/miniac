@@ -34,9 +34,19 @@ public final class Application {
 	public static final String LOCAL_GATEWAY = "local";
 
 	/**
-	 * Default autosave period in seconds (30 minutes).
+	 * Default auto-save period in seconds (30 minutes).
 	 */
 	public static final int DEFAULT_AUTOSAVE_PERIOD = 30 * 60;
+
+	/**
+	 * Gateway with mail-boxes for internal messaging.
+	 */
+	private static final String MAILBOX_GATEWAY = "$MAILBOX";
+
+	/**
+	 * Name of the main application thread.
+	 */
+	private static final String THREAD_NAME = "miniac - main thread";
 
 	/**
 	 * Maximal length of topic or topic filter.
@@ -192,9 +202,15 @@ public final class Application {
 		private final Gateway gateway;
 
 		/**
-		 * Active topic filters of the gateway.
+		 * Simple topic filters of the gateway, i.e., topic filters without
+		 * wild-cards.
 		 */
-		private final Map<String, TopicFilter> topicFilters = new HashMap<>();
+		private final Map<String, TopicFilter> simpleTopicFilters = new HashMap<>();
+
+		/**
+		 * Topic filters of the gateway with wild-cards.
+		 */
+		private final Map<String, TopicFilter> wildcardTopicFilters = new HashMap<>();
 
 		/**
 		 * Constructs the gateway holder.
@@ -466,9 +482,21 @@ public final class Application {
 	private final SystemGateway systemGateway;
 
 	/**
-	 * Active topic filters that are not related to a particular gateway.
+	 * Gateway for internal mailbox messaging.
 	 */
-	private final Map<String, TopicFilter> globalTopicFilters = new HashMap<>();
+	private final MailboxGateway mailboxGateway;
+
+	/**
+	 * Topic filters that are not related to a particular gateway and does not
+	 * contain a wild-cards.
+	 */
+	private final Map<String, TopicFilter> simpleGlobalTopicFilters = new HashMap<>();
+
+	/**
+	 * Topic filters that are not related to a particular gateway and contain a
+	 * wild-cards.
+	 */
+	private final Map<String, TopicFilter> wildcardGlobalTopicFilters = new HashMap<>();
 
 	/**
 	 * Synchronization lock for action queues.
@@ -489,6 +517,11 @@ public final class Application {
 	 * Queue of scheduled pending actions.
 	 */
 	private final Queue<ScheduledAction> scheduledActionQueue = new PriorityQueue<>();
+
+	/**
+	 * Internal counter for generating unique mailbox topics.
+	 */
+	private long mailboxIdCounter = 0;
 
 	/**
 	 * List of modules associated to this application.
@@ -541,12 +574,17 @@ public final class Application {
 				executeApplication();
 				System.exit(0);
 			}
-		}, "miniAC: main thread");
+		}, THREAD_NAME);
 
 		// create system gateway
 		systemGateway = new SystemGateway();
 		systemGateway.attachToApplication(SYSTEM_GATEWAY, this);
 		gatewayHolders.put(SYSTEM_GATEWAY, new GatewayHolder(systemGateway));
+
+		// create mailbox gateway
+		mailboxGateway = new MailboxGateway();
+		mailboxGateway.attachToApplication(MAILBOX_GATEWAY, this);
+		gatewayHolders.put(MAILBOX_GATEWAY, new GatewayHolder(mailboxGateway));
 	}
 
 	/**
@@ -618,7 +656,7 @@ public final class Application {
 			throw new NullPointerException("Data item cannot be null.");
 		}
 
-		if (!Gateway.isValidId(id)) {
+		if (!Gateway.isValidId(gatewayId)) {
 			throw new IllegalArgumentException("Malformed/invalid gateway identifier.");
 		}
 
@@ -676,8 +714,9 @@ public final class Application {
 		if (result.getType().equals(type)) {
 			return (DataItem<T>) result;
 		} else {
-			throw new IllegalArgumentException("Type of data item " + id + " in gateway \"" + gatewayId
-					+ "\" is not compatible with " + type.getName());
+			throw new IllegalArgumentException(
+					"Type of data item " + id + " in gateway \"" + gatewayId + "\" is not compatible with "
+							+ type.getName() + " (its type is " + result.getType().getName() + ").");
 		}
 	}
 
@@ -749,20 +788,24 @@ public final class Application {
 			throw new MessagingException("Invalid topic filter: no subtopic after gateway.");
 		}
 
+		// determine whether the topic filter is simple
+		boolean simpleTopicFilter = detectSimpleTopicFilter(localizedTopicFilter);
+
 		synchronized (lock) {
 			// get topic filters and gateway related to the topic filter
 			Map<String, TopicFilter> topicFilters;
 			GatewayHolder sourceGatewayHolder;
-			if (SINGLE_LEVEL_WILDCARD.equals(topicHead) || MULTI_LEVEL_WILDCARD.equals(topicFilter)) {
+			if (SINGLE_LEVEL_WILDCARD.equals(topicHead) || MULTI_LEVEL_WILDCARD.equals(topicHead)) {
 				sourceGatewayHolder = null;
-				topicFilters = globalTopicFilters;
+				topicFilters = simpleTopicFilter ? simpleGlobalTopicFilters : wildcardGlobalTopicFilters;
 			} else {
 				sourceGatewayHolder = gatewayHolders.get(topicHead);
 				if (sourceGatewayHolder == null) {
 					throw new MessagingException("Invalid topic filter: Unknown gateway \"" + topicHead + "\".");
 				}
 
-				topicFilters = sourceGatewayHolder.topicFilters;
+				topicFilters = simpleTopicFilter ? sourceGatewayHolder.simpleTopicFilters
+						: sourceGatewayHolder.wildcardTopicFilters;
 			}
 
 			// get or create topic filter
@@ -802,20 +845,24 @@ public final class Application {
 		String topicHead = getTopicHead(topicFilter);
 		// retrieve "gateway" (localized) part of the topic filter
 		String localizedTopicFilter = createTopicFilterWithoutHead(topicFilter);
+		// detect whether the topic filter is simple, i.e., without wild-cards
+		boolean simpleTopicFilter = detectSimpleTopicFilter(localizedTopicFilter);
 
 		synchronized (lock) {
 			// get topic filters and gateway related to the topic filter
 			Map<String, TopicFilter> topicFilters;
 			GatewayHolder sourceGatewayHolder;
-			if (SINGLE_LEVEL_WILDCARD.equals(topicHead) || MULTI_LEVEL_WILDCARD.equals(topicFilter)) {
+			if (SINGLE_LEVEL_WILDCARD.equals(topicHead) || MULTI_LEVEL_WILDCARD.equals(topicHead)) {
 				sourceGatewayHolder = null;
-				topicFilters = globalTopicFilters;
+				topicFilters = simpleTopicFilter ? simpleGlobalTopicFilters : wildcardGlobalTopicFilters;
 			} else {
 				sourceGatewayHolder = gatewayHolders.get(topicHead);
 				if (sourceGatewayHolder == null) {
 					return;
 				}
-				topicFilters = sourceGatewayHolder.topicFilters;
+
+				topicFilters = simpleTopicFilter ? sourceGatewayHolder.simpleTopicFilters
+						: sourceGatewayHolder.wildcardTopicFilters;
 			}
 
 			// get topic filter
@@ -846,6 +893,18 @@ public final class Application {
 			} else {
 				enqueueAction(new SubscriptionChangeAction(sourceGatewayHolder, localizedTopicFilter, false));
 			}
+		}
+	}
+
+	/**
+	 * Creates unique topic that can be used for internal messaging.
+	 * 
+	 * @return the topic of the created mailbox.
+	 */
+	public String createMailboxTopic() {
+		synchronized (lock) {
+			mailboxIdCounter++;
+			return MAILBOX_GATEWAY + "/mb-" + mailboxIdCounter;
 		}
 	}
 
@@ -1108,6 +1167,17 @@ public final class Application {
 	}
 
 	/**
+	 * Returns whether the application is launched.
+	 * 
+	 * @return true, if the application is launched.
+	 */
+	public boolean isLaunched() {
+		synchronized (lock) {
+			return launched;
+		}
+	}
+
+	/**
 	 * Initializes and executes the application. The method is executed in the
 	 * main application thread (serialization and event handling thread).
 	 */
@@ -1211,7 +1281,7 @@ public final class Application {
 
 			try {
 				logger.log(Level.INFO, "Gateway \"" + gatewayId + "\" is starting.");
-				gateway.onStart(gatewayBundles);
+				gateway.start(gatewayBundles);
 				startedGateways.add(gateway);
 				logger.log(Level.INFO, "Gateway \"" + gatewayId + "\" started.");
 			} catch (Throwable e) {
@@ -1373,7 +1443,7 @@ public final class Application {
 	private void stopGateways(List<Gateway> gatewaysToStop) {
 		for (Gateway gateway : gatewaysToStop) {
 			try {
-				gateway.onStop();
+				gateway.stop();
 				logger.log(Level.INFO, "Gateway \"" + gateway.getId() + "\" stopped.");
 			} catch (Exception ignore) {
 				logger.log(Level.SEVERE, "Unable to stop the gateway \"" + gateway.getId() + "\".", ignore);
@@ -1444,17 +1514,31 @@ public final class Application {
 	private void handleMessageReceivedAction(MessageReceivedAction action) {
 		// find all matching subscriptions
 		List<SubscriptionImpl> matchingSubscriptions = new ArrayList<>();
-		String[] parsedTopic = parseTopicHierarchy(action.message.getTopic());
+		String topic = action.message.getTopic();
+		String[] parsedTopic = parseTopicHierarchy(topic);
 		synchronized (lock) {
-			// search in gateway specific subscriptions
-			for (TopicFilter topicFilter : action.gatewayHolder.topicFilters.values()) {
+			// find simple topic filter for message topic
+			TopicFilter matchingSimpleFilter = action.gatewayHolder.simpleTopicFilters.get(topic);
+			if (matchingSimpleFilter != null) {
+				matchingSubscriptions.addAll(matchingSimpleFilter.subscriptions);
+			}
+
+			// search in gateway specific subscriptions with wild-cards
+			for (TopicFilter topicFilter : action.gatewayHolder.wildcardTopicFilters.values()) {
 				if (topicFilter.matchTopic(parsedTopic)) {
 					matchingSubscriptions.addAll(topicFilter.subscriptions);
 				}
 			}
 
-			// search in global subscriptions
-			for (TopicFilter topicFilter : globalTopicFilters.values()) {
+			// find simple topic filter for message topic in global topic
+			// filters
+			matchingSimpleFilter = simpleGlobalTopicFilters.get(topic);
+			if (matchingSimpleFilter != null) {
+				matchingSubscriptions.addAll(matchingSimpleFilter.subscriptions);
+			}
+
+			// search in global topic filters with wild-cards
+			for (TopicFilter topicFilter : wildcardGlobalTopicFilters.values()) {
 				if (topicFilter.matchTopic(parsedTopic)) {
 					matchingSubscriptions.addAll(topicFilter.subscriptions);
 				}
@@ -1662,6 +1746,18 @@ public final class Application {
 		} else {
 			return topicFilter.substring(slashPos + 1);
 		}
+	}
+
+	/**
+	 * Returns whether the topic filter is simple, i.e., it does not contain
+	 * wild-cards.
+	 * 
+	 * @param topicFilter
+	 *            the topic filter.
+	 * @return true, if the topic filter is simple, false otherwise.
+	 */
+	private static boolean detectSimpleTopicFilter(String topicFilter) {
+		return false;
 	}
 
 	/**

@@ -24,9 +24,14 @@ public abstract class Gateway {
 	private volatile Application application;
 
 	/**
+	 * Indicates whether the gateway is running, i.e., it has been started.
+	 */
+	private boolean running = false;
+
+	/**
 	 * Synchronization lock controlling binding to an application.
 	 */
-	protected final Object lock = new Object();
+	private final Object lock = new Object();
 
 	/**
 	 * Attaches the gateway to an application.
@@ -77,6 +82,27 @@ public abstract class Gateway {
 	}
 
 	/**
+	 * Returns the synchronization lock that ensures mutual exclusion before the
+	 * gateway is started.
+	 * 
+	 * @return the synchronization lock.
+	 */
+	protected Object getLock() {
+		return lock;
+	}
+
+	/**
+	 * Returns whether the gateway is running, i.e., it has been started.
+	 * 
+	 * @return true, if the gateway is running, false otherwise.
+	 */
+	protected boolean isRunning() {
+		synchronized (lock) {
+			return running;
+		}
+	}
+
+	/**
 	 * Handles a received message by forwarding the message to the application
 	 * to which the gateway is attached.
 	 * 
@@ -88,6 +114,39 @@ public abstract class Gateway {
 			application.pushReceivedMessage(id, message);
 		} else {
 			throw new IllegalStateException("The gateway is not attached to an application.");
+		}
+	}
+
+	/**
+	 * Starts the gateway. The methods is invoked by the application in its main
+	 * thread.
+	 * 
+	 * @see #onStart(Map)
+	 * @param bundles
+	 *            the map with bundles storing state of items related to the
+	 *            gateway.
+	 */
+	void start(Map<String, Bundle> bundles) {
+		synchronized (lock) {
+			running = true;
+		}
+
+		onStart(bundles);
+	}
+
+	/**
+	 * Stops the gateway. The methods is invoked by the application in its main
+	 * thread.
+	 * 
+	 * @see Gateway#onStop()
+	 */
+	void stop() {
+		try {
+			onStop();
+		} finally {
+			synchronized (lock) {
+				running = false;
+			}
 		}
 	}
 
@@ -154,7 +213,7 @@ public abstract class Gateway {
 	protected abstract void onStop();
 
 	/**
-	 * Returns whether the topic name is valid publication topic for this
+	 * Returns whether the topic name is valid publication topic to this
 	 * gateway. The method should be thread-safe.
 	 * 
 	 * @param topicName

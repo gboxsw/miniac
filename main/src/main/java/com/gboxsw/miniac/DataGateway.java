@@ -106,7 +106,7 @@ public final class DataGateway extends Gateway {
 	 */
 	void notifyValueChanged(String id) {
 		if (subscribedDataItems.contains(id)) {
-			handleReceivedMessage(new Message(id, (byte[]) null));
+			handleReceivedMessage(new Message(id));
 		}
 	}
 

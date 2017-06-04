@@ -87,8 +87,6 @@ public class MsgDataItem<T> extends DataItem<T> {
 				update();
 			}
 		}, SUBSCRIPTION_HANDLING_PRIORITY);
-		
-		
 	}
 
 	@Override
