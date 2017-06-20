@@ -82,7 +82,7 @@ public class MsgDataItem<T> extends DataItem<T> {
 		subscription = getApplication().subscribe(readTopic, new MessageListener() {
 
 			@Override
-			public void messageReceived(Message message) {
+			public void onMessage(Message message) {
 				remoteValue = converter.convertTargetToSource(message.getPayload());
 				update();
 			}

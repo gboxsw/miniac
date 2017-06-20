@@ -65,7 +65,7 @@ public class MinuteClockDataItem extends DataItem<Integer> {
 		tickGenerator = app.publishAtFixedRate(new Message(clockMailbox), 30, 30, TimeUnit.SECONDS);
 		tickSubscription = app.subscribe(clockMailbox, new MessageListener() {
 			@Override
-			public void messageReceived(Message message) {
+			public void onMessage(Message message) {
 				update();
 			}
 		});

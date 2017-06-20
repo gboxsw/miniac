@@ -59,6 +59,31 @@ public final class Application {
 	private static final Logger logger = Logger.getLogger(Application.class.getName());
 
 	/**
+	 * Message listener that encapsulates a {@link TopicFilterListener}.
+	 */
+	private static final class TFMessageListener implements MessageListener {
+		/**
+		 * Encapsulated topic filter listener.
+		 */
+		private final TopicFilterListener listener;
+
+		/**
+		 * Constructs the encapsulating message listener.
+		 * 
+		 * @param listener
+		 *            the listener.
+		 */
+		public TFMessageListener(TopicFilterListener listener) {
+			this.listener = listener;
+		}
+
+		@Override
+		public void onMessage(Message message) {
+			listener.onMessage();
+		}
+	}
+
+	/**
 	 * Implementation of subscription.
 	 */
 	private final class SubscriptionImpl implements Subscription, Comparable<SubscriptionImpl> {
@@ -742,6 +767,24 @@ public final class Application {
 	}
 
 	/**
+	 * Subscribes to a topic filter for receiving notifications that a message
+	 * matching the topic filter has been received.
+	 * 
+	 * @param topicFilter
+	 *            the topic filter.
+	 * @param topicFilterListener
+	 *            the topic filter listener.
+	 * @return the subscription.
+	 */
+	public Subscription subscribe(String topicFilter, TopicFilterListener topicFilterListener) {
+		if (topicFilterListener == null) {
+			throw new NullPointerException("The topic filter listener cannot be null.");
+		}
+
+		return subscribe(topicFilter, new TFMessageListener(topicFilterListener), Integer.MAX_VALUE);
+	}
+
+	/**
 	 * Subscribes to a topic.
 	 * 
 	 * @param topicFilter
@@ -763,13 +806,18 @@ public final class Application {
 	 *            the message listener.
 	 * @param handlingPriority
 	 *            the handling priority - subscription with greater priority is
-	 *            handled first.
+	 *            handled first. The value {@link Integer#MAX_VALUE} is not
+	 *            allowed.
 	 * @return the subscription.
 	 */
 	public Subscription subscribe(String topicFilter, MessageListener messageListener, int handlingPriority) {
 		// basic checks
 		if (messageListener == null) {
 			throw new NullPointerException("The message listener cannot be null.");
+		}
+
+		if (!TFMessageListener.class.equals(messageListener.getClass()) && (handlingPriority == Integer.MAX_VALUE)) {
+			throw new IllegalArgumentException("Invalid value of the handling priority.");
 		}
 
 		if (!isValidTopicFilter(topicFilter)) {
@@ -1574,7 +1622,7 @@ public final class Application {
 		// send message to all subscriptions
 		for (SubscriptionImpl subscription : matchingSubscriptions) {
 			try {
-				subscription.messageListener.messageReceived(message);
+				subscription.messageListener.onMessage(message);
 			} catch (Exception e) {
 				logger.log(Level.SEVERE, "Message listener threw an exception.");
 				throw e;

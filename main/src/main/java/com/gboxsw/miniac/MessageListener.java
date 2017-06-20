@@ -11,6 +11,6 @@ public interface MessageListener {
 	 * @param message
 	 *            the received message.
 	 */
-	public void messageReceived(Message message);
+	public void onMessage(Message message);
 
 }
