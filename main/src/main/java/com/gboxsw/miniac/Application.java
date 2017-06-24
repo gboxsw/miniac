@@ -59,13 +59,13 @@ public final class Application {
 	private static final Logger logger = Logger.getLogger(Application.class.getName());
 
 	/**
-	 * Message listener that encapsulates a {@link TopicFilterListener}.
+	 * Message listener that encapsulates a {@link SimpleMessageListener}.
 	 */
-	private static final class TFMessageListener implements MessageListener {
+	private static final class WrappingMessageListener implements MessageListener {
 		/**
-		 * Encapsulated topic filter listener.
+		 * Encapsulated simple message listener.
 		 */
-		private final TopicFilterListener listener;
+		private final SimpleMessageListener listener;
 
 		/**
 		 * Constructs the encapsulating message listener.
@@ -73,7 +73,7 @@ public final class Application {
 		 * @param listener
 		 *            the listener.
 		 */
-		public TFMessageListener(TopicFilterListener listener) {
+		public WrappingMessageListener(SimpleMessageListener listener) {
 			this.listener = listener;
 		}
 
@@ -767,21 +767,40 @@ public final class Application {
 	}
 
 	/**
-	 * Subscribes to a topic filter for receiving notifications that a message
-	 * matching the topic filter has been received.
+	 * Subscribes to a topic.
 	 * 
 	 * @param topicFilter
 	 *            the topic filter.
-	 * @param topicFilterListener
-	 *            the topic filter listener.
+	 * @param messageListener
+	 *            the simple message listener.
 	 * @return the subscription.
 	 */
-	public Subscription subscribe(String topicFilter, TopicFilterListener topicFilterListener) {
-		if (topicFilterListener == null) {
-			throw new NullPointerException("The topic filter listener cannot be null.");
+	public Subscription subscribe(String topicFilter, SimpleMessageListener messageListener) {
+		if (messageListener == null) {
+			throw new NullPointerException("The message listener cannot be null.");
 		}
 
-		return subscribe(topicFilter, new TFMessageListener(topicFilterListener), Integer.MAX_VALUE);
+		return subscribe(topicFilter, new WrappingMessageListener(messageListener));
+	}
+
+	/**
+	 * Subscribes to a topic.
+	 * 
+	 * @param topicFilter
+	 *            the topic filter.
+	 * @param messageListener
+	 *            the simple message listener.
+	 * @param handlingPriority
+	 *            the handling priority - subscription with greater priority is
+	 *            handled first.
+	 * @return the subscription.
+	 */
+	public Subscription subscribe(String topicFilter, SimpleMessageListener messageListener, int handlingPriority) {
+		if (messageListener == null) {
+			throw new NullPointerException("The message listener cannot be null.");
+		}
+
+		return subscribe(topicFilter, new WrappingMessageListener(messageListener), handlingPriority);
 	}
 
 	/**
@@ -806,18 +825,13 @@ public final class Application {
 	 *            the message listener.
 	 * @param handlingPriority
 	 *            the handling priority - subscription with greater priority is
-	 *            handled first. The value {@link Integer#MAX_VALUE} is not
-	 *            allowed.
+	 *            handled first.
 	 * @return the subscription.
 	 */
 	public Subscription subscribe(String topicFilter, MessageListener messageListener, int handlingPriority) {
 		// basic checks
 		if (messageListener == null) {
 			throw new NullPointerException("The message listener cannot be null.");
-		}
-
-		if (!TFMessageListener.class.equals(messageListener.getClass()) && (handlingPriority == Integer.MAX_VALUE)) {
-			throw new IllegalArgumentException("Invalid value of the handling priority.");
 		}
 
 		if (!isValidTopicFilter(topicFilter)) {
