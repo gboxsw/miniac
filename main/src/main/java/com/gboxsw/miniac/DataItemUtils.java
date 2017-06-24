@@ -125,6 +125,26 @@ public final class DataItemUtils {
 		}
 	}
 
+	/**
+	 * Returns whether value of the data item is not null and is equal to given
+	 * primitive value.
+	 * 
+	 * @param dataItem
+	 *            the data item.
+	 * @param value
+	 *            the value.
+	 * @return true, if the value of the data item is not null and is equal to
+	 *         given value, false otherwise.
+	 */
+	public static boolean equals(DataItem<Boolean> dataItem, boolean value) {
+		Boolean dataItemValue = dataItem.getValue();
+		if (dataItemValue == null) {
+			return false;
+		} else {
+			return dataItemValue == value;
+		}
+	}
+
 	private DataItemUtils() {
 
 	}

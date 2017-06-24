@@ -586,6 +586,11 @@ public final class Application {
 	private final Object lock = new Object();
 
 	/**
+	 * Counter used to generate UIDs.
+	 */
+	private long uidGeneratorCounter = 1;
+
+	/**
 	 * Constructs the application.
 	 */
 	public Application() {
@@ -1240,6 +1245,18 @@ public final class Application {
 	}
 
 	/**
+	 * Generates unique identifier.
+	 * 
+	 * @return the unique identifier.
+	 */
+	public String generateUID() {
+		synchronized (lock) {
+			uidGeneratorCounter++;
+			return Long.toHexString(uidGeneratorCounter);
+		}
+	}
+
+	/**
 	 * Initializes and executes the application. The method is executed in the
 	 * main application thread (serialization and event handling thread).
 	 */
@@ -1680,7 +1697,7 @@ public final class Application {
 	 * @param newValue
 	 *            the desired value.
 	 */
-	public void pushChangeRequest(DataItem<?> dataItem, Object newValue) {
+	void pushChangeRequest(DataItem<?> dataItem, Object newValue) {
 		enqueueAction(new RequestChangeAction(dataItem, newValue));
 	}
 
