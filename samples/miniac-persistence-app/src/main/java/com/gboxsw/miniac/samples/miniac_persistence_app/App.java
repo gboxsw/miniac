@@ -17,7 +17,7 @@ public class App {
 
 		// create persistent storage and configure application to store state
 		// every 60 seconds
-		app.setPersistentStorage(new XMLPersistentStorage(new File("storage.xml")));
+		app.setPersistentStorage(new XmlPersistentStorage(new File("storage.xml")));
 		app.setAutosavePeriod(60);
 
 		// create mqtt factory and mqtt gateway associated to the application

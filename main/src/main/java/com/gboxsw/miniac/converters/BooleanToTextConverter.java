@@ -31,7 +31,7 @@ public class BooleanToTextConverter implements Converter<Boolean, byte[]> {
 	 *            the text that is evaluated to false.
 	 * @param exceptionOnFail
 	 *            true, if an exception is thrown when conversion failed, false,
-	 *            otherwise.
+	 *            if the value is converted to null.
 	 */
 	public BooleanToTextConverter(String trueLiteral, String falseLiteral, boolean exceptionOnFail) {
 		if (trueLiteral == null) {
@@ -63,7 +63,11 @@ public class BooleanToTextConverter implements Converter<Boolean, byte[]> {
 		if (value == null) {
 			return null;
 		} else {
-			return value.toString().getBytes();
+			if (value) {
+				return trueLiteral.getBytes();
+			} else {
+				return falseLiteral.getBytes();
+			}
 		}
 	}
 

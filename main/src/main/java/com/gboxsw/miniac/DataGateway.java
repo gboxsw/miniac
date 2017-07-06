@@ -105,7 +105,7 @@ public final class DataGateway extends Gateway {
 	 *            the identifier (within the gateway) of the changed data item.
 	 */
 	void notifyValueChanged(String id) {
-		if (subscribedDataItems.contains(id)) {
+		if ((activatingDataItem != null) || subscribedDataItems.contains(id)) {
 			handleReceivedMessage(new Message(id));
 		}
 	}

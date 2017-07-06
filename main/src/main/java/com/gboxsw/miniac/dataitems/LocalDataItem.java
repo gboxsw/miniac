@@ -23,6 +23,11 @@ public final class LocalDataItem<T> extends DataItem<T> {
 	private final boolean persistent;
 
 	/**
+	 * Initial value of data item.
+	 */
+	private final T initialValue;
+
+	/**
 	 * The last requested (desired) value.
 	 */
 	private T desiredValue;
@@ -36,7 +41,22 @@ public final class LocalDataItem<T> extends DataItem<T> {
 	 *            the type of values stored in the data item.
 	 */
 	public LocalDataItem(boolean persistent, Class<T> type) {
+		this(null, persistent, type);
+	}
+
+	/**
+	 * Constructs the data item with predefined initial value.
+	 * 
+	 * @param initialValue
+	 *            the initial value of data item.
+	 * @param persistent
+	 *            true, if the data item is persistent, false otherwise.
+	 * @param type
+	 *            the type of values stored in the data item.
+	 */
+	public LocalDataItem(T initialValue, boolean persistent, Class<T> type) {
 		super(type, false);
+		this.initialValue = initialValue;
 		this.persistent = persistent;
 
 		if (persistent && !Serializable.class.isAssignableFrom(type)) {
@@ -54,6 +74,11 @@ public final class LocalDataItem<T> extends DataItem<T> {
 		}
 
 		if (!persistent || !savedState.containsKey(SAVED_VALUE_KEY)) {
+			if (initialValue != null) {
+				desiredValue = initialValue;
+				update();
+			}
+
 			return;
 		}
 

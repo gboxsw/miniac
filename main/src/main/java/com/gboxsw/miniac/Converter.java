@@ -1,7 +1,7 @@
 package com.gboxsw.miniac;
 
 /**
- * Represents a converter between two value types.
+ * Represents a bidirectional converter between two value types.
  * 
  * @param <S>
  *            the source type.
