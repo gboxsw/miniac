@@ -407,6 +407,24 @@ public final class Application {
 	}
 
 	/**
+	 * Action representing a request to send (publish) a message produced by the
+	 * message producer.
+	 */
+	private static final class PublishProducedMessageAction extends Action {
+		/**
+		 * The message producer.
+		 */
+		private final MessageProducer messageProducer;
+
+		/**
+		 * Constructs action representing a request to send (publish) a message.
+		 */
+		public PublishProducedMessageAction(MessageProducer messageProducer) {
+			this.messageProducer = messageProducer;
+		}
+	}
+
+	/**
 	 * Subscription change action.
 	 */
 	private static final class SubscriptionChangeAction extends Action {
@@ -554,6 +572,11 @@ public final class Application {
 	private final List<Module> modules = new ArrayList<Module>();
 
 	/**
+	 * List of registered shutdown hooks.
+	 */
+	private final List<Runnable> shutdownHooks = new ArrayList<>();
+
+	/**
 	 * Indicates that initialization of modules started and it is not possible
 	 * to add new modules to the application.
 	 */
@@ -581,9 +604,19 @@ public final class Application {
 	private volatile boolean exitRequested;
 
 	/**
+	 * Indicates that the application has been finalized.
+	 */
+	private volatile boolean finalized;
+
+	/**
 	 * Synchronization lock.
 	 */
 	private final Object lock = new Object();
+
+	/**
+	 * Synchronization lock controlling the finalization of the application.
+	 */
+	private final Object finalizationLock = new Object();
 
 	/**
 	 * Counter used to generate UIDs.
@@ -601,7 +634,16 @@ public final class Application {
 		applicationThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
+				// execute the application loop
 				executeApplication();
+
+				// notify that the application is finalized
+				synchronized (finalizationLock) {
+					finalized = true;
+					finalizationLock.notifyAll();
+				}
+
+				// terminate JVM
 				System.exit(0);
 			}
 		}, THREAD_NAME);
@@ -1047,6 +1089,60 @@ public final class Application {
 	}
 
 	/**
+	 * Publishes messages produced by the message producer at fixed rate
+	 * analogously to
+	 * {@link ScheduledExecutorService#scheduleAtFixedRate(Runnable, long, long, TimeUnit)}.
+	 * 
+	 * @param messageProducer
+	 *            the producer of message to be published.
+	 * @param initialDelay
+	 *            the time to delay first publication.
+	 * @param period
+	 *            the desired period between successive publications.
+	 * @param unit
+	 *            the time unit of the initialDelay and period parameters.
+	 * 
+	 * @return the {@link Cancellable} instance that allows cancellation of the
+	 *         pending publications.
+	 */
+	public Cancellable publishAtFixedRate(MessageProducer messageProducer, long initialDelay, long period,
+			TimeUnit unit) {
+		if (messageProducer == null) {
+			throw new NullPointerException("Message producer cannot be null.");
+		}
+
+		return enqueueScheduledAction(new PublishProducedMessageAction(messageProducer),
+				new Schedule(unit.toNanos(initialDelay), unit.toNanos(period), Schedule.FIXED_RATE));
+	}
+
+	/**
+	 * Publishes messages produced by the message producer with a fixed delay
+	 * analogously to
+	 * {@link ScheduledExecutorService#scheduleWithFixedDelay(Runnable, long, long, TimeUnit)}.
+	 * 
+	 * @param messageProducer
+	 *            the producer of message to be published.
+	 * @param initialDelay
+	 *            the time to delay first publication.
+	 * @param delay
+	 *            the delay between successive publications.
+	 * @param unit
+	 *            the time unit of the initialDelay and period parameters.
+	 * 
+	 * @return the {@link Cancellable} instance that allows cancellation of the
+	 *         pending publications.
+	 */
+	public Cancellable publishWithFixedDelay(MessageProducer messageProducer, long initialDelay, long delay,
+			TimeUnit unit) {
+		if (messageProducer == null) {
+			throw new NullPointerException("Message producer cannot be null.");
+		}
+
+		return enqueueScheduledAction(new PublishProducedMessageAction(messageProducer),
+				new Schedule(unit.toNanos(initialDelay), unit.toNanos(delay), Schedule.FIXED_DELAY));
+	}
+
+	/**
 	 * Creates a publish action for a message to send (publish).
 	 * 
 	 * @param message
@@ -1229,6 +1325,17 @@ public final class Application {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run() {
 				requestApplicationExit();
+
+				// wait for termination
+				synchronized (finalizationLock) {
+					try {
+						while (!finalized) {
+							finalizationLock.wait();
+						}
+					} catch (Exception ignore) {
+
+					}
+				}
 			}
 		});
 	}
@@ -1241,6 +1348,35 @@ public final class Application {
 	public boolean isLaunched() {
 		synchronized (lock) {
 			return launched;
+		}
+	}
+
+	/**
+	 * Adds shutdown hook that is executed during termination of the
+	 * application.
+	 * 
+	 * @param shutdownHook
+	 *            the shutdown hook.
+	 */
+	public void addShutdownHook(Runnable shutdownHook) {
+		if (shutdownHook == null) {
+			throw new NullPointerException("The shutdown hook cannot be null.");
+		}
+
+		synchronized (lock) {
+			shutdownHooks.add(shutdownHook);
+		}
+	}
+
+	/**
+	 * Removes a shutdown hook.
+	 * 
+	 * @param shutdownHook
+	 *            the shutdown hook.
+	 */
+	public void removeShutdownHook(Runnable shutdownHook) {
+		synchronized (lock) {
+			shutdownHooks.remove(shutdownHook);
 		}
 	}
 
@@ -1277,6 +1413,26 @@ public final class Application {
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Main thread of the application failed.", e);
 		} finally {
+			// execute shutdown hooks
+			List<Runnable> shutdownHooks = new ArrayList<>();
+			synchronized (lock) {
+				shutdownHooks.addAll(this.shutdownHooks);
+			}
+
+			for (Runnable shutdownHook : shutdownHooks) {
+				if (shutdownHook != null) {
+					try {
+						shutdownHook.run();
+					} catch (Exception e) {
+						logger.log(Level.SEVERE, "Shutdown hook threw an exception.", e);
+					}
+				}
+			}
+
+			if (!shutdownHooks.isEmpty()) {
+				logger.log(Level.INFO, "Shutdown hooks executed.");
+			}
+
 			// save state if the application started normally
 			if (eventLoopStarted) {
 				saveState();
@@ -1287,6 +1443,7 @@ public final class Application {
 				Collections.reverse(startedGateways);
 				stopGateways(startedGateways);
 			}
+
 		}
 
 		logger.log(Level.INFO, "Application stopped.");
@@ -1445,6 +1602,16 @@ public final class Application {
 				continue;
 			}
 
+			// handle action transformations
+			if (action.getClass() == PublishProducedMessageAction.class) {
+				action = transformPublishProducedMessageAction((PublishProducedMessageAction) action);
+			}
+			
+			if (action == null) {
+				continue;
+			}
+
+			// handle actions
 			if (action.getClass() == SynchronizeDataItemAction.class) {
 				// handle synchronization of a data item
 				SynchronizeDataItemAction synchronizeAction = (SynchronizeDataItemAction) action;
@@ -1501,6 +1668,34 @@ public final class Application {
 			saveState();
 			return;
 		}
+	}
+
+	/**
+	 * Transforms action to publish a produced message to a publish action.
+	 * 
+	 * @param action
+	 *            the action to publish a produced message.
+	 */
+	private PublishAction transformPublishProducedMessageAction(PublishProducedMessageAction action) {
+		Message message = null;
+		try {
+			message = action.messageProducer.createMessage();
+		} catch (Exception e) {
+			logger.log(Level.SEVERE, "Production of message by a producer failed.", e);
+		}
+
+		if (message == null) {
+			return null;
+		}
+
+		PublishAction result = null;
+		try {
+			result = createPublishAction(message);
+		} catch (Exception e) {
+			logger.log(Level.SEVERE, "Message created by message producer cannot be published.", e);
+		}
+
+		return result;
 	}
 
 	/**
