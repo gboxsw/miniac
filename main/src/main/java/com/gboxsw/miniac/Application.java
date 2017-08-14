@@ -61,7 +61,7 @@ public final class Application {
 	/**
 	 * Message listener that encapsulates a {@link SimpleMessageListener}.
 	 */
-	private static final class WrappingMessageListener implements MessageListener {
+	private static final class WrappingSimpleMessageListener implements MessageListener {
 		/**
 		 * Encapsulated simple message listener.
 		 */
@@ -73,7 +73,7 @@ public final class Application {
 		 * @param listener
 		 *            the listener.
 		 */
-		public WrappingMessageListener(SimpleMessageListener listener) {
+		public WrappingSimpleMessageListener(SimpleMessageListener listener) {
 			this.listener = listener;
 		}
 
@@ -827,7 +827,7 @@ public final class Application {
 			throw new NullPointerException("The message listener cannot be null.");
 		}
 
-		return subscribe(topicFilter, new WrappingMessageListener(messageListener));
+		return subscribe(topicFilter, new WrappingSimpleMessageListener(messageListener));
 	}
 
 	/**
@@ -847,7 +847,7 @@ public final class Application {
 			throw new NullPointerException("The message listener cannot be null.");
 		}
 
-		return subscribe(topicFilter, new WrappingMessageListener(messageListener), handlingPriority);
+		return subscribe(topicFilter, new WrappingSimpleMessageListener(messageListener), handlingPriority);
 	}
 
 	/**
@@ -1606,7 +1606,7 @@ public final class Application {
 			if (action.getClass() == PublishProducedMessageAction.class) {
 				action = transformPublishProducedMessageAction((PublishProducedMessageAction) action);
 			}
-			
+
 			if (action == null) {
 				continue;
 			}
