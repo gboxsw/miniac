@@ -712,6 +712,24 @@ public final class Application {
 	}
 
 	/**
+	 * Returns associated gateway.
+	 * 
+	 * @param id
+	 *            the identifier of the gateway.
+	 * @return the gateway or null, if such a gateway does not exist.
+	 */
+	public Gateway getGateway(String id) {
+		synchronized (lock) {
+			GatewayHolder holder = gatewayHolders.get(id);
+			if (holder != null) {
+				return holder.gateway;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Adds a data item to the application.
 	 * 
 	 * @param gatewayId
