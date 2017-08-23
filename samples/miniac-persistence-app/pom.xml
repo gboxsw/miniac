@@ -21,5 +21,11 @@
 			<artifactId>miniac</artifactId>
 			<version>1.0.0</version>
 		</dependency>
+
+		<dependency>
+			<groupId>com.gboxsw.miniac</groupId>
+			<artifactId>mqtt-gateway</artifactId>
+			<version>1.0.0</version>
+		</dependency>
 	</dependencies>
 </project>
