@@ -134,6 +134,10 @@ public final class DataItemPublisher implements Subscription {
 	 * @param converter
 	 *            the converter that converts value of data item to message
 	 *            payload.
+	 * @param <T>
+	 *            the value type of published data item.
+	 * 
+	 * @return the closable publisher.
 	 */
 	public static <T> DataItemPublisher create(DataItem<T> dataItem, String topic,
 			ValueToPayloadConverter<T> converter) {
@@ -152,6 +156,10 @@ public final class DataItemPublisher implements Subscription {
 	 * @param converter
 	 *            the converter that converts value of data item to message
 	 *            payload.
+	 * @param <T>
+	 *            the value type of published data item.
+	 * 
+	 * @return the closable publisher.
 	 */
 	public static <T> DataItemPublisher create(DataItem<T> dataItem, String topic, Converter<T, byte[]> converter) {
 		return new DataItemPublisher(dataItem, topic, converter);
