@@ -3,7 +3,7 @@ package com.gboxsw.miniac;
 /**
  * The interface of a message generator.
  */
-public interface MessageProducer {
+public interface MessageFactory {
 
 	/**
 	 * Creates and returns a message.

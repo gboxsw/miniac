@@ -6,6 +6,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * The application.
+ */
 public final class Application {
 
 	/**
@@ -312,13 +315,6 @@ public final class Application {
 	}
 
 	/**
-	 * Base class for actions that can be put into a work (action) queue.
-	 */
-	private static abstract class Action {
-
-	}
-
-	/**
 	 * Scheduled action.
 	 */
 	private final class ScheduledAction implements Comparable<ScheduledAction> {
@@ -361,146 +357,14 @@ public final class Application {
 	}
 
 	/**
-	 * Action representing a receipt of a message.
+	 * Base class for actions that can be put into a work (action) queue.
 	 */
-	private static final class MessageReceivedAction extends Action {
-		/**
-		 * Gateway holder of the source gateway.
-		 */
-		private final GatewayHolder gatewayHolder;
+	private abstract class Action {
 
 		/**
-		 * The received message.
+		 * Executes action.
 		 */
-		private final Message message;
-
-		/**
-		 * Constructs action representing a receipt of a message.
-		 */
-		public MessageReceivedAction(GatewayHolder gatewayHolder, Message message) {
-			this.gatewayHolder = gatewayHolder;
-			this.message = message;
-		}
-	}
-
-	/**
-	 * Action representing a request to send (publish) a message.
-	 */
-	private static final class PublishAction extends Action {
-		/**
-		 * Gateway holder of the target gateway.
-		 */
-		private final GatewayHolder gatewayHolder;
-
-		/**
-		 * Message to be published.
-		 */
-		private final Message message;
-
-		/**
-		 * Constructs action representing a request to send (publish) a message.
-		 */
-		public PublishAction(GatewayHolder gatewayHolder, Message message) {
-			this.gatewayHolder = gatewayHolder;
-			this.message = message;
-		}
-	}
-
-	/**
-	 * Action representing a request to send (publish) a message produced by the
-	 * message producer.
-	 */
-	private static final class PublishProducedMessageAction extends Action {
-		/**
-		 * The message producer.
-		 */
-		private final MessageProducer messageProducer;
-
-		/**
-		 * Constructs action representing a request to send (publish) a message.
-		 */
-		public PublishProducedMessageAction(MessageProducer messageProducer) {
-			this.messageProducer = messageProducer;
-		}
-	}
-
-	/**
-	 * Subscription change action.
-	 */
-	private static final class SubscriptionChangeAction extends Action {
-
-		/**
-		 * The gateway holder of subscribing/unsubscribing gateway.
-		 */
-		private final GatewayHolder gatewayHolder;
-
-		/**
-		 * The topic filter.
-		 */
-		private final String topicFilter;
-
-		/**
-		 * True for subscribe, false for unsubscribe.
-		 */
-		private final boolean subscribe;
-
-		/**
-		 * Construct the subscription change request.
-		 */
-		public SubscriptionChangeAction(GatewayHolder gatewayHolder, String topicFilter, boolean subscribe) {
-			this.gatewayHolder = gatewayHolder;
-			this.topicFilter = topicFilter;
-			this.subscribe = subscribe;
-		}
-	}
-
-	/**
-	 * Action representing request for synchronization of a data item.
-	 */
-	private static final class SynchronizeDataItemAction extends Action {
-		/**
-		 * The data item to be synchronized.
-		 */
-		private final DataItem<?> dataItem;
-
-		/**
-		 * Constructs request to synchronize a data item.
-		 * 
-		 * @param dataItem
-		 *            the data item.
-		 */
-		public SynchronizeDataItemAction(DataItem<?> dataItem) {
-			this.dataItem = dataItem;
-		}
-	}
-
-	/**
-	 * Action representing request for changing the value of a data item.
-	 */
-	private static final class RequestChangeAction extends Action {
-
-		/**
-		 * The data item requesting change of value.
-		 */
-		private final DataItem<?> dataItem;
-
-		/**
-		 * The desired value.
-		 */
-		private final Object value;
-
-		/**
-		 * Constructs request to change the value of a data item.
-		 * 
-		 * @param dataItem
-		 *            the data item.
-		 * @param value
-		 *            the desired value.
-		 */
-		public RequestChangeAction(DataItem<?> dataItem, Object value) {
-			this.dataItem = dataItem;
-			this.value = value;
-		}
+		abstract void execute();
 	}
 
 	/**
@@ -562,9 +426,9 @@ public final class Application {
 	private final Queue<ScheduledAction> scheduledActionQueue = new PriorityQueue<>();
 
 	/**
-	 * Internal counter for generating unique mailbox topics.
+	 * Internal counter for generating unique identifiers.
 	 */
-	private long mailboxIdCounter = 0;
+	private long uidCounter = 0;
 
 	/**
 	 * List of modules associated to this application.
@@ -832,6 +696,27 @@ public final class Application {
 	}
 
 	/**
+	 * Creates unique topic that can be used for internal messaging.
+	 * 
+	 * @return the topic of the created mailbox.
+	 */
+	public String createMailboxTopic() {
+		return MAILBOX_GATEWAY + "/mb-" + createUniqueId();
+	}
+
+	/**
+	 * Creates unique identifier that can be used as a topic level.
+	 * 
+	 * @return the unique identifier.
+	 */
+	public String createUniqueId() {
+		synchronized (lock) {
+			uidCounter++;
+			return Long.toHexString(uidCounter);
+		}
+	}
+
+	/**
 	 * Subscribes to a topic.
 	 * 
 	 * @param topicFilter
@@ -946,10 +831,12 @@ public final class Application {
 				// put appropriate subscription changes to the working queue
 				if (sourceGatewayHolder == null) {
 					for (GatewayHolder gatewayHolder : gatewayHolders.values()) {
-						enqueueAction(new SubscriptionChangeAction(gatewayHolder, localizedTopicFilter, true));
+						enqueueAction(
+								createSubscriptionChangeAction(gatewayHolder.gateway, localizedTopicFilter, true));
 					}
 				} else {
-					enqueueAction(new SubscriptionChangeAction(sourceGatewayHolder, localizedTopicFilter, true));
+					enqueueAction(
+							createSubscriptionChangeAction(sourceGatewayHolder.gateway, localizedTopicFilter, true));
 				}
 			}
 
@@ -957,6 +844,31 @@ public final class Application {
 			filter.subscriptions.add(subscription);
 			return subscription;
 		}
+	}
+
+	/**
+	 * Creates action that changes subscription.
+	 * 
+	 * @param gatewayHolder
+	 *            the gateway holder
+	 * @param topicFilter
+	 *            the topic filter.
+	 * @param subscribe
+	 *            true, for subscribe, false for unsubscribe.
+	 * @return the action.
+	 */
+	private Action createSubscriptionChangeAction(final Gateway gateway, final String topicFilter,
+			final boolean subscribe) {
+		return new Action() {
+			@Override
+			void execute() {
+				if (subscribe) {
+					gateway.onAddTopicFilter(topicFilter);
+				} else {
+					gateway.onRemoveTopicFilter(topicFilter);
+				}
+			}
+		};
 	}
 
 	/**
@@ -1015,23 +927,11 @@ public final class Application {
 			// put appropriate subscription changes to the working queue
 			if (sourceGatewayHolder == null) {
 				for (GatewayHolder gatewayHolder : gatewayHolders.values()) {
-					enqueueAction(new SubscriptionChangeAction(gatewayHolder, localizedTopicFilter, false));
+					enqueueAction(createSubscriptionChangeAction(gatewayHolder.gateway, localizedTopicFilter, false));
 				}
 			} else {
-				enqueueAction(new SubscriptionChangeAction(sourceGatewayHolder, localizedTopicFilter, false));
+				enqueueAction(createSubscriptionChangeAction(sourceGatewayHolder.gateway, localizedTopicFilter, false));
 			}
-		}
-	}
-
-	/**
-	 * Creates unique topic that can be used for internal messaging.
-	 * 
-	 * @return the topic of the created mailbox.
-	 */
-	public String createMailboxTopic() {
-		synchronized (lock) {
-			mailboxIdCounter++;
-			return MAILBOX_GATEWAY + "/mb-" + mailboxIdCounter;
 		}
 	}
 
@@ -1111,8 +1011,8 @@ public final class Application {
 	 * analogously to
 	 * {@link ScheduledExecutorService#scheduleAtFixedRate(Runnable, long, long, TimeUnit)}.
 	 * 
-	 * @param messageProducer
-	 *            the producer of message to be published.
+	 * @param messageFactory
+	 *            the message factory that produces messages to be published.
 	 * @param initialDelay
 	 *            the time to delay first publication.
 	 * @param period
@@ -1123,13 +1023,13 @@ public final class Application {
 	 * @return the {@link Cancellable} instance that allows cancellation of the
 	 *         pending publications.
 	 */
-	public Cancellable publishAtFixedRate(MessageProducer messageProducer, long initialDelay, long period,
+	public Cancellable publishAtFixedRate(MessageFactory messageFactory, long initialDelay, long period,
 			TimeUnit unit) {
-		if (messageProducer == null) {
-			throw new NullPointerException("Message producer cannot be null.");
+		if (messageFactory == null) {
+			throw new NullPointerException("Message factory cannot be null.");
 		}
 
-		return enqueueScheduledAction(new PublishProducedMessageAction(messageProducer),
+		return enqueueScheduledAction(createPublishFromFactoryAction(messageFactory),
 				new Schedule(unit.toNanos(initialDelay), unit.toNanos(period), Schedule.FIXED_RATE));
 	}
 
@@ -1138,8 +1038,8 @@ public final class Application {
 	 * analogously to
 	 * {@link ScheduledExecutorService#scheduleWithFixedDelay(Runnable, long, long, TimeUnit)}.
 	 * 
-	 * @param messageProducer
-	 *            the producer of message to be published.
+	 * @param messageFactory
+	 *            the message factory that produces messages to be published.
 	 * @param initialDelay
 	 *            the time to delay first publication.
 	 * @param delay
@@ -1150,24 +1050,110 @@ public final class Application {
 	 * @return the {@link Cancellable} instance that allows cancellation of the
 	 *         pending publications.
 	 */
-	public Cancellable publishWithFixedDelay(MessageProducer messageProducer, long initialDelay, long delay,
+	public Cancellable publishWithFixedDelay(MessageFactory messageFactory, long initialDelay, long delay,
 			TimeUnit unit) {
-		if (messageProducer == null) {
-			throw new NullPointerException("Message producer cannot be null.");
+		if (messageFactory == null) {
+			throw new NullPointerException("Message factory cannot be null.");
 		}
 
-		return enqueueScheduledAction(new PublishProducedMessageAction(messageProducer),
+		return enqueueScheduledAction(createPublishFromFactoryAction(messageFactory),
 				new Schedule(unit.toNanos(initialDelay), unit.toNanos(delay), Schedule.FIXED_DELAY));
 	}
 
 	/**
-	 * Creates a publish action for a message to send (publish).
+	 * Executes a code with a delay.
+	 * 
+	 * @param runnable
+	 *            the runnable (code) to be executed.
+	 * @param delay
+	 *            the time from now to delay execution.
+	 * @param unit
+	 *            the time unit of the delay parameter.
+	 * 
+	 * @return the {@link Cancellable} instance that allows cancellation of the
+	 *         pending invocation.
+	 */
+	public Cancellable invokeLater(Runnable runnable, long delay, TimeUnit unit) {
+		return enqueueScheduledAction(createActionWithRunnable(runnable),
+				new Schedule(unit.toNanos(delay), 0, Schedule.NONE));
+	}
+
+	/**
+	 * Executes a code at fixed rate in the event queue of the application
+	 * analogously to
+	 * {@link ScheduledExecutorService#scheduleAtFixedRate(Runnable, long, long, TimeUnit)}.
+	 * 
+	 * @param runnable
+	 *            the runnable (code) to be executed.
+	 * @param initialDelay
+	 *            the time to delay first publication.
+	 * @param period
+	 *            the desired period between successive publications.
+	 * @param unit
+	 *            the time unit of the initialDelay and period parameters.
+	 * 
+	 * @return the {@link Cancellable} instance that allows cancellation of the
+	 *         pending invocations.
+	 */
+	public Cancellable invokeAtFixedRate(Runnable runnable, long initialDelay, long period, TimeUnit unit) {
+		if (runnable == null) {
+			throw new NullPointerException("Runnable cannot be null.");
+		}
+
+		return enqueueScheduledAction(createActionWithRunnable(runnable),
+				new Schedule(unit.toNanos(initialDelay), unit.toNanos(period), Schedule.FIXED_RATE));
+	}
+
+	/**
+	 * Executes a code with a fixed delay in the event queue of the application
+	 * analogously to
+	 * {@link ScheduledExecutorService#scheduleWithFixedDelay(Runnable, long, long, TimeUnit)}.
+	 * 
+	 * @param runnable
+	 *            the runnable (code) to be executed.
+	 * @param initialDelay
+	 *            the time to delay first publication.
+	 * @param delay
+	 *            the delay between successive publications.
+	 * @param unit
+	 *            the time unit of the initialDelay and period parameters.
+	 * 
+	 * @return the {@link Cancellable} instance that allows cancellation of the
+	 *         pending invocations.
+	 */
+	public Cancellable invokeWithFixedDelay(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
+		if (runnable == null) {
+			throw new NullPointerException("Runnable cannot be null.");
+		}
+
+		return enqueueScheduledAction(createActionWithRunnable(runnable),
+				new Schedule(unit.toNanos(initialDelay), unit.toNanos(delay), Schedule.FIXED_DELAY));
+	}
+
+	/**
+	 * Creates action that executes a runnable.
+	 * 
+	 * @param runnable
+	 *            the runnable to be executed.
+	 * @return the action.
+	 */
+	private Action createActionWithRunnable(final Runnable runnable) {
+		return new Action() {
+			@Override
+			public void execute() {
+				runnable.run();
+			}
+		};
+	}
+
+	/**
+	 * Creates an action that publishes a message.
 	 * 
 	 * @param message
 	 *            the message to be published.
-	 * @return the instance of {@link PublishAction}.
+	 * @return the action.
 	 */
-	private PublishAction createPublishAction(Message message) {
+	private Action createPublishAction(Message message) {
 		String topicName = message.getTopic();
 		if (!isValidTopicName(topicName)) {
 			throw new MessagingException("Invalid topic.");
@@ -1194,8 +1180,30 @@ public final class Application {
 			throw new MessagingException("Invalid topic for gateway \"" + gatewayId + "\".");
 		}
 
-		Message localizedMessage = new Message(localizedTopicName, message.getPayload());
-		return new PublishAction(targetGatewayHolder, localizedMessage);
+		final Message localizedMessage = new Message(localizedTopicName, message.getPayload());
+		final Gateway gateway = targetGatewayHolder.gateway;
+		return new Action() {
+			@Override
+			public void execute() {
+				gateway.onPublish(localizedMessage);
+			}
+		};
+	}
+
+	/**
+	 * Creates an action that publishes a message created by a message factory.
+	 * 
+	 * @param messageFactory
+	 *            the message factory.
+	 * @return the action.
+	 */
+	private Action createPublishFromFactoryAction(final MessageFactory messageFactory) {
+		return new Action() {
+			@Override
+			void execute() {
+				publishFactoryMessage(messageFactory);
+			}
+		};
 	}
 
 	/**
@@ -1620,39 +1628,11 @@ public final class Application {
 				continue;
 			}
 
-			// handle action transformations
-			if (action.getClass() == PublishProducedMessageAction.class) {
-				action = transformPublishProducedMessageAction((PublishProducedMessageAction) action);
-			}
-
-			if (action == null) {
-				continue;
-			}
-
-			// handle actions
-			if (action.getClass() == SynchronizeDataItemAction.class) {
-				// handle synchronization of a data item
-				SynchronizeDataItemAction synchronizeAction = (SynchronizeDataItemAction) action;
-				synchronizeAction.dataItem.synchronizeValue();
-			} else if (action.getClass() == MessageReceivedAction.class) {
-				// handle receipt of a message
-				handleMessageReceivedAction((MessageReceivedAction) action);
-			} else if (action.getClass() == PublishAction.class) {
-				// handle request to send message
-				PublishAction publishAction = (PublishAction) action;
-				publishAction.gatewayHolder.gateway.onPublish(publishAction.message);
-			} else if (action.getClass() == RequestChangeAction.class) {
-				// handle request to change the value of a data item
-				RequestChangeAction changeAction = (RequestChangeAction) action;
-				changeAction.dataItem.requestValueChange(changeAction.value);
-			} else if (action.getClass() == SubscriptionChangeAction.class) {
-				// handle subscription change
-				SubscriptionChangeAction changeAction = (SubscriptionChangeAction) action;
-				if (changeAction.subscribe) {
-					changeAction.gatewayHolder.gateway.onAddTopicFilter(changeAction.topicFilter);
-				} else {
-					changeAction.gatewayHolder.gateway.onRemoveTopicFilter(changeAction.topicFilter);
-				}
+			// handle action
+			try {
+				action.execute();
+			} catch (Exception e) {
+				logger.log(Level.SEVERE, "Execution of action failed.", e);
 			}
 
 			// save state (if necessary)
@@ -1689,31 +1669,33 @@ public final class Application {
 	}
 
 	/**
-	 * Transforms action to publish a produced message to a publish action.
+	 * Publishes a message generated by a message factory.
 	 * 
-	 * @param action
-	 *            the action to publish a produced message.
+	 * @param messageFactory
+	 *            the message factory that generates a message to be published.
 	 */
-	private PublishAction transformPublishProducedMessageAction(PublishProducedMessageAction action) {
+	private void publishFactoryMessage(MessageFactory messageFactory) {
 		Message message = null;
 		try {
-			message = action.messageProducer.createMessage();
+			message = messageFactory.createMessage();
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Production of message by a producer failed.", e);
+			logger.log(Level.SEVERE, "Creation of message by factory failed.", e);
 		}
 
 		if (message == null) {
-			return null;
+			return;
 		}
 
-		PublishAction result = null;
+		Action action = null;
 		try {
-			result = createPublishAction(message);
+			action = createPublishAction(message);
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Message created by message producer cannot be published.", e);
+			logger.log(Level.SEVERE, "Message created by message factory cannot be published.", e);
 		}
 
-		return result;
+		if (action != null) {
+			action.execute();
+		}
 	}
 
 	/**
@@ -1802,21 +1784,26 @@ public final class Application {
 
 	/**
 	 * Handles the received message.
+	 * 
+	 * @param gatewayHolder
+	 *            the gateway that is destination of message.
+	 * @param message
+	 *            the received message.
 	 */
-	private void handleMessageReceivedAction(MessageReceivedAction action) {
+	private void handleMessageReceivedAction(GatewayHolder gatewayHolder, Message message) {
 		// find all matching subscriptions
 		List<SubscriptionImpl> matchingSubscriptions = new ArrayList<>();
-		String topic = action.message.getTopic();
+		String topic = message.getTopic();
 		String[] parsedTopic = parseTopicHierarchy(topic);
 		synchronized (lock) {
 			// find simple topic filter for message topic
-			TopicFilter matchingSimpleFilter = action.gatewayHolder.simpleTopicFilters.get(topic);
+			TopicFilter matchingSimpleFilter = gatewayHolder.simpleTopicFilters.get(topic);
 			if (matchingSimpleFilter != null) {
 				matchingSubscriptions.addAll(matchingSimpleFilter.subscriptions);
 			}
 
 			// search in gateway specific subscriptions with wild-cards
-			for (TopicFilter topicFilter : action.gatewayHolder.wildcardTopicFilters.values()) {
+			for (TopicFilter topicFilter : gatewayHolder.wildcardTopicFilters.values()) {
 				if (topicFilter.matchTopic(parsedTopic)) {
 					matchingSubscriptions.addAll(topicFilter.subscriptions);
 				}
@@ -1860,13 +1847,13 @@ public final class Application {
 		}
 
 		// create message with topic including the source gateway
-		Message message = new Message(action.gatewayHolder.gateway.getId() + "/" + action.message.getTopic(),
-				action.message.getPayload());
+		Message messageToDelivery = new Message(gatewayHolder.gateway.getId() + "/" + message.getTopic(),
+				message.getPayload());
 
 		// send message to all subscriptions
 		for (SubscriptionImpl subscription : matchingSubscriptions) {
 			try {
-				subscription.messageListener.onMessage(message);
+				subscription.messageListener.onMessage(messageToDelivery);
 			} catch (Exception e) {
 				logger.log(Level.SEVERE, "Message listener threw an exception.");
 				throw e;
@@ -1883,11 +1870,16 @@ public final class Application {
 	 * @param message
 	 *            the received message.
 	 */
-	void pushReceivedMessage(String gatewayId, Message message) {
+	void pushReceivedMessage(final String gatewayId, final Message message) {
 		synchronized (lock) {
-			GatewayHolder gatewayHolder = gatewayHolders.get(gatewayId);
+			final GatewayHolder gatewayHolder = gatewayHolders.get(gatewayId);
 			if (gatewayHolder != null) {
-				enqueueAction(new MessageReceivedAction(gatewayHolder, message));
+				enqueueAction(new Action() {
+					@Override
+					void execute() {
+						handleMessageReceivedAction(gatewayHolder, message);
+					}
+				});
 			}
 		}
 	}
@@ -1898,8 +1890,13 @@ public final class Application {
 	 * @param dataItem
 	 *            the data item.
 	 */
-	void pushSynchronizationRequest(DataItem<?> dataItem) {
-		enqueueAction(new SynchronizeDataItemAction(dataItem));
+	void pushSynchronizationRequest(final DataItem<?> dataItem) {
+		enqueueAction(new Action() {
+			@Override
+			void execute() {
+				dataItem.synchronizeValue();
+			}
+		});
 	}
 
 	/**
@@ -1910,8 +1907,12 @@ public final class Application {
 	 * @param newValue
 	 *            the desired value.
 	 */
-	void pushChangeRequest(DataItem<?> dataItem, Object newValue) {
-		enqueueAction(new RequestChangeAction(dataItem, newValue));
+	void pushChangeRequest(final DataItem<?> dataItem, final Object newValue) {
+		enqueueAction(new Action() {
+			public void execute() {
+				dataItem.requestValueChange(newValue);
+			}
+		});
 	}
 
 	/**
