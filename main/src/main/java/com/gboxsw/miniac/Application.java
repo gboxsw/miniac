@@ -431,6 +431,11 @@ public final class Application {
 	private long uidCounter = 0;
 
 	/**
+	 * Internal map that stores key-value pairs associated with the application.
+	 */
+	private final Map<String, Object> keyValuePairs = new HashMap<>();
+
+	/**
 	 * List of modules associated to this application.
 	 */
 	private final List<Module> modules = new ArrayList<Module>();
@@ -481,11 +486,6 @@ public final class Application {
 	 * Synchronization lock controlling the finalization of the application.
 	 */
 	private final Object finalizationLock = new Object();
-
-	/**
-	 * Counter used to generate UIDs.
-	 */
-	private long uidGeneratorCounter = 1;
 
 	/**
 	 * Constructs the application.
@@ -713,6 +713,120 @@ public final class Application {
 		synchronized (lock) {
 			uidCounter++;
 			return Long.toHexString(uidCounter);
+		}
+	}
+
+	/**
+	 * Assign a new value to a key. If the value is null, the key will be
+	 * removed.
+	 * 
+	 * @param keyName
+	 *            the name of key.
+	 * @param value
+	 *            the new value associated to key.
+	 */
+	public void setKeyValue(String keyName, Object value) {
+		synchronized (keyValuePairs) {
+			if (value == null) {
+				keyValuePairs.remove(keyName);
+			} else {
+				keyValuePairs.put(keyName, value);
+			}
+		}
+	}
+
+	/**
+	 * Removes a key.
+	 * 
+	 * @param keyName
+	 *            the name of key.
+	 */
+	public void removeKey(String keyName) {
+		synchronized (keyValuePairs) {
+			keyValuePairs.remove(keyName);
+		}
+	}
+
+	/**
+	 * Returns value associated to a key.
+	 * 
+	 * @param keyName
+	 *            the name of key.
+	 * @return the associated value or null, if no value is assigned.
+	 */
+	public Object getKeyValue(String keyName) {
+		synchronized (keyValuePairs) {
+			return keyValuePairs.get(keyName);
+		}
+	}
+
+	/**
+	 * Returns value associated to a key as a string.
+	 * 
+	 * @param keyName
+	 *            the name of key.
+	 * @return the value converted to string.
+	 */
+	public String getKeyValueAsString(String keyName) {
+		Object value = getKeyValue(keyName);
+		if (value == null) {
+			return null;
+		} else {
+			return value.toString();
+		}
+	}
+
+	/**
+	 * Returns value associated to a key converted to an integer.
+	 * 
+	 * @param keyName
+	 *            the name of key.
+	 * @param defaultValue
+	 *            the default value if conversion failed.
+	 * @return the value converted to integer or the default value if conversion
+	 *         failed.
+	 */
+	public int getKeyValueAsInt(String keyName, int defaultValue) {
+		Object value = getKeyValue(keyName);
+		if (value == null) {
+			return defaultValue;
+		}
+
+		if (value instanceof Number) {
+			return ((Number) value).intValue();
+		}
+
+		try {
+			return Integer.parseInt(value.toString().trim());
+		} catch (Exception e) {
+			return defaultValue;
+		}
+	}
+
+	/**
+	 * Returns value associated to a key converted to a double.
+	 * 
+	 * @param keyName
+	 *            the name of key.
+	 * @param defaultValue
+	 *            the default value if conversion failed.
+	 * @return the value converted to integer or the default value if conversion
+	 *         failed.
+	 */
+	public double getKeyValueAsDouble(String keyName, double defaultValue) {
+		Object value = getKeyValue(keyName);
+		if (value == null) {
+			return defaultValue;
+		}
+
+		if (value instanceof Number) {
+			return ((Number) value).doubleValue();
+		}
+
+		try {
+			return Double.parseDouble(value.toString().trim());
+		} catch (Exception e) {
+			return defaultValue;
 		}
 	}
 
@@ -1403,18 +1517,6 @@ public final class Application {
 	public void removeShutdownHook(Runnable shutdownHook) {
 		synchronized (lock) {
 			shutdownHooks.remove(shutdownHook);
-		}
-	}
-
-	/**
-	 * Generates unique identifier.
-	 * 
-	 * @return the unique identifier.
-	 */
-	public String generateUID() {
-		synchronized (lock) {
-			uidGeneratorCounter++;
-			return Long.toHexString(uidGeneratorCounter);
 		}
 	}
 
