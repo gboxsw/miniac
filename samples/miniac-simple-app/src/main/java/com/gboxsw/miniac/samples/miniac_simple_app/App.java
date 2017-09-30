@@ -1,7 +1,7 @@
 package com.gboxsw.miniac.samples.miniac_simple_app;
 
 import com.gboxsw.miniac.*;
-import com.gboxsw.miniac.mqttgateway.MqttGateway;
+import com.gboxsw.miniac.gateways.mqtt.MqttGateway;
 import com.gboxsw.miniac.mqttutils.MqttFactory;
 import com.gboxsw.miniac.mqttutils.MqttFactory.Persistence;
 

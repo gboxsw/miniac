@@ -3,7 +3,7 @@ package com.gboxsw.miniac.samples.miniac_persistence_app;
 import java.io.File;
 
 import com.gboxsw.miniac.*;
-import com.gboxsw.miniac.mqttgateway.MqttGateway;
+import com.gboxsw.miniac.gateways.mqtt.MqttGateway;
 import com.gboxsw.miniac.mqttutils.MqttFactory;
 import com.gboxsw.miniac.mqttutils.MqttFactory.Persistence;
 
