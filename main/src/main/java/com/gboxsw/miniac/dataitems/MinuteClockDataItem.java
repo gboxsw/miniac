@@ -16,11 +16,6 @@ public class MinuteClockDataItem extends DataItem<Integer> {
 	private Cancellable tickGenerator;
 
 	/**
-	 * Subscription to tick messages.
-	 */
-	private Subscription tickSubscription;
-
-	/**
 	 * Constructs the minute clock.
 	 */
 	public MinuteClockDataItem() {
@@ -60,16 +55,13 @@ public class MinuteClockDataItem extends DataItem<Integer> {
 	@Override
 	protected void onActivate(Bundle savedState) {
 		Application app = getApplication();
-		String clockMailbox = app.createMailboxTopic();
-
-		tickGenerator = app.publishAtFixedRate(new Message(clockMailbox), 30, 30, TimeUnit.SECONDS);
-		tickSubscription = app.subscribe(clockMailbox, new MessageListener() {
+		tickGenerator = app.invokeAtFixedRate(new Runnable() {
 			@Override
-			public void onMessage(Message message) {
+			public void run() {
 				update();
 			}
-		});
-
+		}, 30, 30, TimeUnit.SECONDS);
+	
 		update();
 	}
 
@@ -92,6 +84,5 @@ public class MinuteClockDataItem extends DataItem<Integer> {
 	@Override
 	protected void onDeactivate() {
 		tickGenerator.cancel();
-		tickSubscription.close();
 	}
 }

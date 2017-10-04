@@ -55,5 +55,4 @@ public class IntToTextConverter implements Converter<Integer, byte[]> {
 
 		return null;
 	}
-
 }
