@@ -1,11 +1,6 @@
 package com.gboxsw.miniac;
 
-import com.gboxsw.miniac.converters.BooleanToTextConverter;
-import com.gboxsw.miniac.converters.DoubleToTextConverter;
-import com.gboxsw.miniac.converters.IntToTextConverter;
-import com.gboxsw.miniac.converters.LongToTextConverter;
-import com.gboxsw.miniac.converters.ReverseConverter;
-import com.gboxsw.miniac.converters.StringConverter;
+import com.gboxsw.miniac.converters.*;
 
 /**
  * Collection of commonly used converters and helper methods.
@@ -47,5 +42,18 @@ public class Converters {
 	 */
 	public static <S, T> Converter<S, T> reverse(Converter<T, S> converter) {
 		return new ReverseConverter<>(converter);
+	}
+
+	/**
+	 * Returns the converter that chains two converters.
+	 * 
+	 * @param converter1
+	 *            the first converter in the chain.
+	 * @param converter2
+	 *            the second converter in the chain.
+	 * @return the chaining converter.
+	 */
+	public static <S, T, I> Converter<S, T> chain(Converter<S, I> converter1, Converter<I, T> converter2) {
+		return new ChainingConverter<>(converter1, converter2);
 	}
 }

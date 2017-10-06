@@ -26,7 +26,7 @@ public class ReverseConverter<S, T> implements Converter<S, T> {
 	 */
 	public ReverseConverter(Converter<T, S> converter) {
 		if (converter == null) {
-			throw new NullPointerException("The converter cannot be null.");
+			throw new NullPointerException("The utilized converter cannot be null.");
 		}
 
 		this.converter = converter;

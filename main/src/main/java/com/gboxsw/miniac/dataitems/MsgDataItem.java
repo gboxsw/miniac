@@ -1,5 +1,8 @@
 package com.gboxsw.miniac.dataitems;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import com.gboxsw.miniac.*;
 
 /**
@@ -14,6 +17,11 @@ public class MsgDataItem<T> extends DataItem<T> {
 	 * Handling priority for messages holding new values of data items.
 	 */
 	public static final int SUBSCRIPTION_HANDLING_PRIORITY = Integer.MAX_VALUE / 2;
+
+	/**
+	 * Logger.
+	 */
+	private static final Logger logger = Logger.getLogger(MsgDataItem.class.getName());
 
 	/**
 	 * The converter of a value to an appropriate message content and vice
@@ -83,7 +91,12 @@ public class MsgDataItem<T> extends DataItem<T> {
 
 			@Override
 			public void onMessage(Message message) {
-				remoteValue = converter.convertTargetToSource(message.getPayload());
+				try {
+					remoteValue = converter.convertTargetToSource(message.getPayload());
+				} catch (Exception e) {
+					remoteValue = null;
+					logger.log(Level.WARNING, "Conversion of updating value for data item " + getId() + " failed.", e);
+				}
 				update();
 			}
 		}, SUBSCRIPTION_HANDLING_PRIORITY);
@@ -96,7 +109,15 @@ public class MsgDataItem<T> extends DataItem<T> {
 
 	@Override
 	protected void onValueChangeRequested(T newValue) {
-		getApplication().publish(new Message(writeTopic, converter.convertSourceToTarget(newValue)));
+		byte[] messagePayload;
+		try {
+			messagePayload = converter.convertSourceToTarget(newValue);
+		} catch (Exception e) {
+			logger.log(Level.WARNING, "Conversion of new value of data item " + getId() + " failed.", e);
+			throw e;
+		}
+
+		getApplication().publish(new Message(writeTopic, messagePayload));
 	}
 
 	@Override

@@ -46,7 +46,7 @@ public final class DataItemPublisher implements Subscription {
 	 *            the converter that converts value of data item to message
 	 *            payload.
 	 */
-	private <T> DataItemPublisher(DataItem<T> dataItem, String topic, final Converter<T, byte[]> converter) {
+	private <T> DataItemPublisher(final DataItem<T> dataItem, String topic, final Converter<T, byte[]> converter) {
 		this(dataItem, topic, new ValueToPayloadConverter<T>() {
 			@Override
 			public byte[] convert(T value) {
