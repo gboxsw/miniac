@@ -38,6 +38,10 @@ public class Converters {
 	 * 
 	 * @param converter
 	 *            the converter.
+	 * @param <S>
+	 *            the source type.
+	 * @param <T>
+	 *            the target type.
 	 * @return the reversed converter.
 	 */
 	public static <S, T> Converter<S, T> reverse(Converter<T, S> converter) {
@@ -51,6 +55,12 @@ public class Converters {
 	 *            the first converter in the chain.
 	 * @param converter2
 	 *            the second converter in the chain.
+	 * @param <S>
+	 *            the source type.
+	 * @param <I>
+	 *            the type of intermediate value.
+	 * @param <T>
+	 *            the target type.
 	 * @return the chaining converter.
 	 */
 	public static <S, T, I> Converter<S, T> chain(Converter<S, I> converter1, Converter<I, T> converter2) {
