@@ -1,7 +1,7 @@
 package com.gboxsw.miniac;
 
 /**
- * The collections of device instances. The class simplifies management of
+ * The collection of device instances. The class simplifies management of
  * device instances.
  */
 public class Devices {
@@ -9,7 +9,7 @@ public class Devices {
 	/**
 	 * Internal register of devices.
 	 */
-	private static final InstanceRegister<Device> instances = new InstanceRegister<>();
+	private static final InstanceRegister<Device> instances = new InstanceRegister<>(true);
 
 	/**
 	 * Private constructor (no instances of the class are allowed).

@@ -61,9 +61,26 @@ class InstanceRegister<T> {
 	private final Map<Class<?>, InstanceGroup<T>> instanceGroups = new HashMap<>();
 
 	/**
+	 * Indicates whether an exception is throw when requested instance is not
+	 * available.
+	 */
+	private final boolean noInstanceException;
+
+	/**
 	 * Internal synchronization lock.
 	 */
 	private final Object lock = new Object();
+
+	/**
+	 * Constructs the register.
+	 * 
+	 * @param noInstanceException
+	 *            true, if an exception should be thrown when requested instance
+	 *            is not registered, false, if null should be returned.
+	 */
+	public InstanceRegister(boolean noInstanceException) {
+		this.noInstanceException = noInstanceException;
+	}
 
 	/**
 	 * Registers the instance and marks the class of the instance as the class
@@ -79,7 +96,11 @@ class InstanceRegister<T> {
 
 		synchronized (lock) {
 			InstanceGroup<T> instanceGroup = instanceGroups.get(instance.getClass());
-			if (instanceGroup == null) {
+			if (instanceGroup != null) {
+				if (instanceGroup.instance == instance) {
+					return;
+				}
+
 				throw new IllegalStateException(
 						"The instance cannot be registered. Another instance/instances registered.");
 			}
@@ -107,21 +128,32 @@ class InstanceRegister<T> {
 			throw new NullPointerException("The identifier cannot be null.");
 		}
 
+		Class<?> classOfInstance = instance.getClass();
+		if (SingletonHelper.isSingletonClass(classOfInstance)) {
+			throw new IllegalArgumentException(
+					"The class " + classOfInstance.getName() + " does not allow multiple instances.");
+		}
+
 		synchronized (lock) {
-			InstanceGroup<T> instanceGroup = instanceGroups.get(instance.getClass());
+			InstanceGroup<T> instanceGroup = instanceGroups.get(classOfInstance);
 			if (instanceGroup == null) {
 				instanceGroup = new InstanceGroup<T>();
-				instanceGroups.put(instance.getClass(), instanceGroup);
+				instanceGroups.put(classOfInstance, instanceGroup);
 			}
 
 			if (instanceGroup.isSingletonGroup()) {
 				throw new IllegalStateException(
-						"The instance cannot be registered. The class does not allow multiple instance.");
+						"The instance cannot be registered. There is a singleton instance already associated with the class "
+								+ classOfInstance.getName());
 			}
 
 			if (instanceGroup.instances.containsKey(id)) {
+				if (instanceGroup.instances.get(id) == instance) {
+					return;
+				}
+
 				throw new IllegalArgumentException(
-						"The instance cannot be registered. The instance with given identifier is already registered.");
+						"The instance cannot be registered. An instance with the same identifier is already registered.");
 			}
 
 			if (instanceGroup.instances.containsValue(instance)) {
@@ -135,19 +167,23 @@ class InstanceRegister<T> {
 	/**
 	 * Returns singleton associated with given class.
 	 * 
-	 * @param classOfResult
+	 * @param aClass
 	 *            the class.
 	 * @return the singleton.
 	 */
 	@SuppressWarnings("unchecked")
-	public <R extends T> R get(Class<R> classOfResult) {
-		if (classOfResult == null) {
+	public <R extends T> R get(Class<R> aClass) {
+		if (aClass == null) {
 			throw new NullPointerException("The class cannot be null.");
 		}
 
 		synchronized (lock) {
-			InstanceGroup<T> instanceGroup = instanceGroups.get(classOfResult);
+			InstanceGroup<T> instanceGroup = instanceGroups.get(aClass);
 			if (instanceGroup == null) {
+				if (noInstanceException) {
+					throw new IllegalStateException("No registered singleton instance for class " + aClass.getName());
+				}
+
 				return null;
 			}
 
@@ -163,15 +199,15 @@ class InstanceRegister<T> {
 	/**
 	 * Returns instance associated with given class.
 	 * 
-	 * @param classOfResult
+	 * @param aClass
 	 *            the class.
 	 * @param id
 	 *            the identifier of the instance.
 	 * @return the instance.
 	 */
 	@SuppressWarnings("unchecked")
-	public <R extends T> R get(Class<R> classOfResult, String id) {
-		if (classOfResult == null) {
+	public <R extends T> R get(Class<R> aClass, String id) {
+		if (aClass == null) {
 			throw new NullPointerException("The class cannot be null.");
 		}
 
@@ -180,17 +216,29 @@ class InstanceRegister<T> {
 		}
 
 		synchronized (lock) {
-			InstanceGroup<T> instanceGroup = instanceGroups.get(classOfResult);
+			InstanceGroup<T> instanceGroup = instanceGroups.get(aClass);
 			if (instanceGroup == null) {
+				if (noInstanceException) {
+					throw new IllegalStateException("No registered instances for class " + aClass.getName());
+				}
+
 				return null;
 			}
 
 			if (instanceGroup.isSingletonGroup()) {
 				throw new IllegalArgumentException(
-						"The class does not allow multiple instances - only retrieval of singleton instance is allowed.");
+						"The class does not allow multiple instances - only a singleton instance can be retrieved.");
 			}
 
-			return (R) instanceGroup.instances.get(id);
+			R result = (R) instanceGroup.instances.get(id);
+			if (result == null) {
+				if (noInstanceException) {
+					throw new IllegalStateException(
+							"No registered instance for class " + aClass.getName() + " with id " + id + ".");
+				}
+			}
+
+			return result;
 		}
 	}
 

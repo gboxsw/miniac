@@ -1,15 +1,15 @@
 package com.gboxsw.miniac;
 
 /**
- * The collections of module instances. The class simplifies management of
- * module instances.
+ * The collection of module instances. The class simplifies management of module
+ * instances.
  */
 public class Modules {
 
 	/**
 	 * Internal register of modules.
 	 */
-	private static final InstanceRegister<Module> instances = new InstanceRegister<>();
+	private static final InstanceRegister<Module> instances = new InstanceRegister<>(true);
 
 	/**
 	 * Private constructor (no instances of the class are allowed).
@@ -17,7 +17,7 @@ public class Modules {
 	private Modules() {
 
 	}
-	
+
 	/**
 	 * Register instance of a single-instance module.
 	 * 

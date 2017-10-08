@@ -22,6 +22,13 @@ public abstract class Module {
 	protected final Object lock = new Object();
 
 	/**
+	 * Protected constructor checking number of instances.
+	 */
+	protected Module() {
+		SingletonHelper.notifyNewInstance(this);
+	}
+
+	/**
 	 * Attaches the module to an application.
 	 * 
 	 * @param application

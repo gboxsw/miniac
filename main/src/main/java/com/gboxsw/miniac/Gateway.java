@@ -34,6 +34,13 @@ public abstract class Gateway {
 	private final Object lock = new Object();
 
 	/**
+	 * Protected constructor checking number of instances.
+	 */
+	protected Gateway() {
+		SingletonHelper.notifyNewInstance(this);
+	}
+
+	/**
 	 * Attaches the gateway to an application.
 	 * 
 	 * @param id

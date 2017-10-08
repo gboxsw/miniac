@@ -1,9 +1,16 @@
 package com.gboxsw.miniac;
 
 /**
- * The interface that labels classes that represents a device (a group of data
- * items) and can be managed by the class {@link Devices}.
+ * The base class for a device - a group of data items that can be managed by
+ * the class {@link Devices}.
  */
-public interface Device {
+public class Device {
+
+	/**
+	 * Protected constructor checking number of instances.
+	 */
+	protected Device() {
+		SingletonHelper.notifyNewInstance(this);
+	}
 
 }
