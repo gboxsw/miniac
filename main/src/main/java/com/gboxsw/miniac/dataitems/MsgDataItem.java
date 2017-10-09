@@ -11,7 +11,7 @@ import com.gboxsw.miniac.*;
  * @param <T>
  *            the type of value.
  */
-public class MsgDataItem<T> extends DataItem<T> {
+public final class MsgDataItem<T> extends DataItem<T> {
 
 	/**
 	 * Handling priority for messages holding new values of data items.

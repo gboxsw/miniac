@@ -433,7 +433,7 @@ public final class Application {
 	/**
 	 * Internal map that stores key-value pairs associated with the application.
 	 */
-	private final Map<String, Object> keyValuePairs = new HashMap<>();
+	private final Map<String, Object> properties = new HashMap<>();
 
 	/**
 	 * List of modules associated to this application.
@@ -717,58 +717,59 @@ public final class Application {
 	}
 
 	/**
-	 * Assign a new value to a key. If the value is null, the key will be
-	 * removed.
+	 * Assigns a new value to a property. If the value is null, the property
+	 * will be removed.
 	 * 
-	 * @param keyName
-	 *            the name of key.
+	 * @param name
+	 *            the name of property.
 	 * @param value
-	 *            the new value associated to key.
+	 *            the new value of the property.
 	 */
-	public void setKeyValue(String keyName, Object value) {
-		synchronized (keyValuePairs) {
+	public void setProperty(String name, Object value) {
+		synchronized (properties) {
 			if (value == null) {
-				keyValuePairs.remove(keyName);
+				properties.remove(name);
 			} else {
-				keyValuePairs.put(keyName, value);
+				properties.put(name, value);
 			}
 		}
 	}
 
 	/**
-	 * Removes a key.
+	 * Removes a property.
 	 * 
-	 * @param keyName
-	 *            the name of key.
+	 * @param name
+	 *            the name of property.
 	 */
-	public void removeKey(String keyName) {
-		synchronized (keyValuePairs) {
-			keyValuePairs.remove(keyName);
+	public void removeProperty(String name) {
+		synchronized (properties) {
+			properties.remove(name);
 		}
 	}
 
 	/**
-	 * Returns value associated to a key.
+	 * Returns value of property.
 	 * 
-	 * @param keyName
-	 *            the name of key.
-	 * @return the associated value or null, if no value is assigned.
+	 * @param name
+	 *            the name of property.
+	 * @return the value of the property or null, if the property is not
+	 *         defined.
 	 */
-	public Object getKeyValue(String keyName) {
-		synchronized (keyValuePairs) {
-			return keyValuePairs.get(keyName);
+	public Object getProperty(String name) {
+		synchronized (properties) {
+			return properties.get(name);
 		}
 	}
 
 	/**
-	 * Returns value associated to a key as a string.
+	 * Returns value of property as a string.
 	 * 
-	 * @param keyName
-	 *            the name of key.
-	 * @return the value converted to string.
+	 * @param name
+	 *            the name of property.
+	 * @return the property value converted to string.
 	 */
-	public String getKeyValueAsString(String keyName) {
-		Object value = getKeyValue(keyName);
+	public String getPropertyAsString(String name) {
+		Object value = getProperty(name);
 		if (value == null) {
 			return null;
 		} else {
@@ -777,17 +778,17 @@ public final class Application {
 	}
 
 	/**
-	 * Returns value associated to a key converted to an integer.
+	 * Returns value of property converted to an integer.
 	 * 
-	 * @param keyName
-	 *            the name of key.
+	 * @param name
+	 *            the name of property.
 	 * @param defaultValue
 	 *            the default value if conversion failed.
 	 * @return the value converted to integer or the default value if conversion
 	 *         failed.
 	 */
-	public int getKeyValueAsInt(String keyName, int defaultValue) {
-		Object value = getKeyValue(keyName);
+	public int getPropertyAsInt(String name, int defaultValue) {
+		Object value = getProperty(name);
 		if (value == null) {
 			return defaultValue;
 		}
@@ -804,17 +805,17 @@ public final class Application {
 	}
 
 	/**
-	 * Returns value associated to a key converted to a double.
+	 * Returns value of property converted to a double.
 	 * 
-	 * @param keyName
-	 *            the name of key.
+	 * @param name
+	 *            the name of property.
 	 * @param defaultValue
 	 *            the default value if conversion failed.
 	 * @return the value converted to integer or the default value if conversion
 	 *         failed.
 	 */
-	public double getKeyValueAsDouble(String keyName, double defaultValue) {
-		Object value = getKeyValue(keyName);
+	public double getPropertyAsDouble(String name, double defaultValue) {
+		Object value = getProperty(name);
 		if (value == null) {
 			return defaultValue;
 		}

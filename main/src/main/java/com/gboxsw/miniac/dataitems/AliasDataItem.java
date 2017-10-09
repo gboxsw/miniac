@@ -8,7 +8,7 @@ import com.gboxsw.miniac.*;
  * @param <T>
  *            the type of value.
  */
-public class AliasDataItem<T> extends DataItem<T> {
+public final class AliasDataItem<T> extends DataItem<T> {
 
 	/**
 	 * The source data item.
@@ -16,14 +16,26 @@ public class AliasDataItem<T> extends DataItem<T> {
 	private final DataItem<T> source;
 
 	/**
+	 * Constructs the data item with read-only attribute.
+	 * 
+	 * @param source
+	 *            the data item that is aliased.
+	 * @param readOnly
+	 *            true, if the data item is read-only, false otherwise.
+	 */
+	public AliasDataItem(DataItem<T> source, boolean readOnly) {
+		super(source.getType(), readOnly || source.isReadOnly());
+		this.source = source;
+	}
+	
+	/**
 	 * Constructs the data item.
 	 * 
 	 * @param source
 	 *            the data item that is aliased.
 	 */
 	public AliasDataItem(DataItem<T> source) {
-		super(source.getType(), source.isReadOnly());
-		this.source = source;
+		this(source, false);
 	}
 
 	@Override

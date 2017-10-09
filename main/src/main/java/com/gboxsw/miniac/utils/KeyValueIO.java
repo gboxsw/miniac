@@ -120,7 +120,7 @@ public class KeyValueIO {
 	}
 
 	/**
-	 * Copy all key-value pairs from a text file to key-value pairs of an
+	 * Copy all key-value pairs from a text file to properties of an
 	 * application. Invalid lines are silently skipped.
 	 * 
 	 * @param source
@@ -141,7 +141,7 @@ public class KeyValueIO {
 
 			Object value;
 			if (typePreserved) {
-				Object oldValue = target.getKeyValue(key);
+				Object oldValue = target.getProperty(key);
 				if (oldValue != null) {
 					try {
 						value = convertValue(kvPair.getValue(), oldValue.getClass());
@@ -155,7 +155,7 @@ public class KeyValueIO {
 				value = kvPair.getValue();
 			}
 
-			target.setKeyValue(key, value);
+			target.setProperty(key, value);
 		}
 	}
 

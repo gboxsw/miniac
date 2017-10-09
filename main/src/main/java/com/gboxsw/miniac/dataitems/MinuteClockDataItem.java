@@ -8,7 +8,7 @@ import com.gboxsw.miniac.*;
 /**
  * Data item whose value is changed every minute.
  */
-public class MinuteClockDataItem extends DataItem<Integer> {
+public final class MinuteClockDataItem extends DataItem<Integer> {
 
 	/**
 	 * Cancellable generator of ticks.
