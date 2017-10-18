@@ -49,6 +49,14 @@ public abstract class Gateway {
 	 *            the application to which the gateway is attached.
 	 */
 	final void attachToApplication(String id, Application application) {
+		if (id == null) {
+			throw new NullPointerException("The identifier cannot be null.");
+		}
+
+		if (application == null) {
+			throw new NullPointerException("The application cannot be null.");
+		}
+
 		synchronized (lock) {
 			if (this.application != null) {
 				throw new IllegalStateException("The gateway is already attached to an application.");
@@ -56,7 +64,7 @@ public abstract class Gateway {
 
 			// note: the order of assignments is important (the application must
 			// be assigned as the last)
-			this.id = id;
+			this.id = id.intern();
 			this.application = application;
 		}
 	}

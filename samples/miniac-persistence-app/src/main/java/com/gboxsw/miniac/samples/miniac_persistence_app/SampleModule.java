@@ -2,7 +2,6 @@ package com.gboxsw.miniac.samples.miniac_persistence_app;
 
 import com.gboxsw.miniac.*;
 import com.gboxsw.miniac.dataitems.*;
-import com.gboxsw.miniac.converters.IntToTextConverter;
 
 /**
  * Sample module as a logical group of data items, variables and subscriptions.
@@ -27,7 +26,8 @@ public class SampleModule extends Module {
 	public SampleModule() {
 		// number is created as read-only data item - no write topic is
 		// specified
-		number = new MsgDataItem<>("mqtt/miniac/number", new IntToTextConverter(), Integer.class);
+		number = new MsgDataItem<>("mqtt/miniac/number", Converters.reverse(Converters.INT_TO_TEXTBYTES),
+				Integer.class);
 
 		// the data item "total" accumulates values of the data item "number"
 		total = new AccumulatingDataItem(number);

@@ -3,7 +3,6 @@ package com.gboxsw.miniac.samples.miniac_simple_app;
 import java.util.concurrent.TimeUnit;
 
 import com.gboxsw.miniac.*;
-import com.gboxsw.miniac.converters.IntToTextConverter;
 import com.gboxsw.miniac.dataitems.LocalDataItem;
 import com.gboxsw.miniac.dataitems.MsgDataItem;
 
@@ -32,7 +31,8 @@ public class SampleModule extends Module {
 	 * Constructs the module.
 	 */
 	public SampleModule() {
-		number = new MsgDataItem<>("mqtt/miniac/number", "mqtt/miniac/number", new IntToTextConverter(), Integer.class);
+		number = new MsgDataItem<>("mqtt/miniac/number", "mqtt/miniac/number",
+				Converters.reverse(Converters.INT_TO_TEXTBYTES), Integer.class);
 		localString = new LocalDataItem<>(true, String.class);
 	}
 

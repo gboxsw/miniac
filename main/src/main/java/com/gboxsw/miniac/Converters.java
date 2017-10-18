@@ -8,29 +8,54 @@ import com.gboxsw.miniac.converters.*;
 public class Converters {
 
 	/**
-	 * Default boolean to text converter.
+	 * Default string to text-bytes converter.
 	 */
-	public static final BooleanToTextConverter BOOL2TEXT = new BooleanToTextConverter("1", "0", false);
+	public static final Converter<String, byte[]> STRING_TO_TEXTBYTES = new StringConverter();
 
 	/**
-	 * Default long to text converter.
+	 * Default text-bytes to string converter.
 	 */
-	public static final LongToTextConverter LONG2TEXT = new LongToTextConverter();
+	public static final Converter<byte[], String> TEXTBYTES_TO_STRING = reverse(STRING_TO_TEXTBYTES);
 
 	/**
-	 * Default int to text converter.
+	 * Default boolean to string converter.
 	 */
-	public static final IntToTextConverter INT2TEXT = new IntToTextConverter();
+	public static final Converter<Boolean, String> BOOL_TO_STRING = new BooleanToStringConverter("1", "0", false);
 
 	/**
-	 * Default double to text converter.
+	 * Default boolean to text-bytes converter.
 	 */
-	public static final DoubleToTextConverter DOUBLE2TEXT = new DoubleToTextConverter();
+	public static final Converter<Boolean, byte[]> BOOL_TO_TEXTBYTES = chain(BOOL_TO_STRING, STRING_TO_TEXTBYTES);
 
 	/**
-	 * Default string converter.
+	 * Default long to string converter.
 	 */
-	public static final StringConverter STRING2TEXT = new StringConverter();
+	public static final Converter<Long, String> LONG_TO_STRING = new LongToStringConverter();
+
+	/**
+	 * Default long to text-bytes converter.
+	 */
+	public static final Converter<Long, byte[]> LONG_TO_TEXTBYTES = chain(LONG_TO_STRING, STRING_TO_TEXTBYTES);
+
+	/**
+	 * Default int to string converter.
+	 */
+	public static final Converter<Integer, String> INT_TO_STRING = new IntToStringConverter();
+
+	/**
+	 * Default int to text-bytes converter.
+	 */
+	public static final Converter<Integer, byte[]> INT_TO_TEXTBYTES = chain(INT_TO_STRING, STRING_TO_TEXTBYTES);
+
+	/**
+	 * Default double to string converter.
+	 */
+	public static final Converter<Double, String> DOUBLE_TO_STRING = new DoubleToStringConverter();
+
+	/**
+	 * Default double to text-bytes converter.
+	 */
+	public static final Converter<Double, byte[]> DOUBLE_TO_TEXTBYTES = chain(DOUBLE_TO_STRING, STRING_TO_TEXTBYTES);
 
 	/**
 	 * Returns the converter that realizes conversion in reverse direction

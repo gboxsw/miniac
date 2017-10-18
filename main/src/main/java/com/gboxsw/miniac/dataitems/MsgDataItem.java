@@ -27,7 +27,7 @@ public final class MsgDataItem<T> extends DataItem<T> {
 	 * The converter of a value to an appropriate message content and vice
 	 * versa.
 	 */
-	private final Converter<T, byte[]> converter;
+	private final Converter<byte[], T> converter;
 
 	/**
 	 * The topic that determines the value of data item.
@@ -58,12 +58,12 @@ public final class MsgDataItem<T> extends DataItem<T> {
 	 *            the topic where requests for change of value can be sent. If
 	 *            the value is null, the data item is read-only.
 	 * @param converter
-	 *            the converter that encodes the value to message content and
+	 *            the converter that encodes the message payload to value and
 	 *            vice versa.
 	 * @param type
 	 *            the type of data item.
 	 */
-	public MsgDataItem(String readTopic, String writeTopic, Converter<T, byte[]> converter, Class<T> type) {
+	public MsgDataItem(String readTopic, String writeTopic, Converter<byte[], T> converter, Class<T> type) {
 		super(type, writeTopic == null);
 		this.readTopic = readTopic;
 		this.writeTopic = writeTopic;
@@ -76,12 +76,11 @@ public final class MsgDataItem<T> extends DataItem<T> {
 	 * @param readTopic
 	 *            the topic where new value is published.
 	 * @param converter
-	 *            the converter that encodes the value to message content and
-	 *            vice versa.
+	 *            the converter that encodes the message payload to value.
 	 * @param type
 	 *            the type of data item.
 	 */
-	public MsgDataItem(String readTopic, Converter<T, byte[]> converter, Class<T> type) {
+	public MsgDataItem(String readTopic, Converter<byte[], T> converter, Class<T> type) {
 		this(readTopic, null, converter, type);
 	}
 
@@ -92,7 +91,7 @@ public final class MsgDataItem<T> extends DataItem<T> {
 			@Override
 			public void onMessage(Message message) {
 				try {
-					remoteValue = converter.convertTargetToSource(message.getPayload());
+					remoteValue = converter.convertSourceToTarget(message.getPayload());
 				} catch (Exception e) {
 					remoteValue = null;
 					logger.log(Level.WARNING, "Conversion of updating value for data item " + getId() + " failed.", e);
@@ -111,7 +110,7 @@ public final class MsgDataItem<T> extends DataItem<T> {
 	protected void onValueChangeRequested(T newValue) {
 		byte[] messagePayload;
 		try {
-			messagePayload = converter.convertSourceToTarget(newValue);
+			messagePayload = converter.convertTargetToSource(newValue);
 		} catch (Exception e) {
 			logger.log(Level.WARNING, "Conversion of new value of data item " + getId() + " failed.", e);
 			throw e;

@@ -8,7 +8,7 @@ import com.gboxsw.miniac.*;
 /**
  * Bidirectional regular expression filter.
  */
-public class RegexFilter implements Converter<byte[], byte[]> {
+public class RegexFilter implements Converter<String, String> {
 
 	/**
 	 * Logger.
@@ -67,7 +67,7 @@ public class RegexFilter implements Converter<byte[], byte[]> {
 	}
 
 	@Override
-	public byte[] convertSourceToTarget(byte[] value) {
+	public String convertSourceToTarget(String value) {
 		if (value == null) {
 			return null;
 		}
@@ -87,7 +87,7 @@ public class RegexFilter implements Converter<byte[], byte[]> {
 			}
 
 			if (result != null) {
-				return result.getBytes();
+				return result;
 			}
 		} catch (Exception e) {
 			logger.log(Level.FINE, "Regular expression is matched, but retrieval of capturing group failed.", e);
@@ -97,7 +97,7 @@ public class RegexFilter implements Converter<byte[], byte[]> {
 	}
 
 	@Override
-	public byte[] convertTargetToSource(byte[] value) {
+	public String convertTargetToSource(String value) {
 		return convertSourceToTarget(value);
 	}
 }

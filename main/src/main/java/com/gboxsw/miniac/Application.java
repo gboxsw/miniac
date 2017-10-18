@@ -1,6 +1,8 @@
 package com.gboxsw.miniac;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -486,6 +488,11 @@ public final class Application {
 	 * Synchronization lock controlling the finalization of the application.
 	 */
 	private final Object finalizationLock = new Object();
+
+	/**
+	 * Executor service to be used by gateways.
+	 */
+	private final ExecutorService executorService = Executors.newCachedThreadPool();
 
 	/**
 	 * Constructs the application.
@@ -1573,6 +1580,7 @@ public final class Application {
 				stopGateways(startedGateways);
 			}
 
+			executorService.shutdown();
 		}
 
 		logger.log(Level.INFO, "Application stopped.");
@@ -1950,8 +1958,7 @@ public final class Application {
 		}
 
 		// create message with topic including the source gateway
-		Message messageToDelivery = new Message(gatewayHolder.gateway.getId() + "/" + message.getTopic(),
-				message.getPayload());
+		Message messageToDelivery = message.cloneWithNewTopic(gatewayHolder.gateway.getId() + "/" + message.getTopic());
 
 		// send message to all subscriptions
 		for (SubscriptionImpl subscription : matchingSubscriptions) {
@@ -2027,6 +2034,15 @@ public final class Application {
 	 */
 	public boolean isInApplicationThread() {
 		return Thread.currentThread() == applicationThread;
+	}
+
+	/**
+	 * Returns the executor service of the application.
+	 * 
+	 * @return the executor service.
+	 */
+	public ExecutorService getExecutorService() {
+		return executorService;
 	}
 
 	/**

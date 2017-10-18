@@ -3,9 +3,9 @@ package com.gboxsw.miniac.converters;
 import com.gboxsw.miniac.Converter;
 
 /**
- * Integer to string converter.
+ * Long to string converter.
  */
-public class IntToTextConverter implements Converter<Integer, byte[]> {
+public class LongToStringConverter implements Converter<Long, String> {
 
 	/**
 	 * Indicates whether an exception is thrown when conversion failed.
@@ -19,34 +19,34 @@ public class IntToTextConverter implements Converter<Integer, byte[]> {
 	 *            true, if an exception is thrown when conversion failed, false,
 	 *            otherwise.
 	 */
-	public IntToTextConverter(boolean exceptionOnFail) {
+	public LongToStringConverter(boolean exceptionOnFail) {
 		this.exceptionOnFail = exceptionOnFail;
 	}
 
 	/**
 	 * Constructs a silent converter.
 	 */
-	public IntToTextConverter() {
+	public LongToStringConverter() {
 		this(false);
 	}
 
 	@Override
-	public byte[] convertSourceToTarget(Integer value) {
+	public String convertSourceToTarget(Long value) {
 		if (value == null) {
 			return null;
 		} else {
-			return value.toString().getBytes();
+			return value.toString();
 		}
 	}
 
 	@Override
-	public Integer convertTargetToSource(byte[] value) {
-		if ((value == null) || (value.length == 0)) {
+	public Long convertTargetToSource(String value) {
+		if ((value == null) || value.isEmpty()) {
 			return null;
 		}
 
 		try {
-			return Integer.parseInt(new String(value).trim());
+			return Long.parseLong(value.trim());
 		} catch (Exception e) {
 			if (exceptionOnFail) {
 				throw e;
@@ -55,4 +55,5 @@ public class IntToTextConverter implements Converter<Integer, byte[]> {
 
 		return null;
 	}
+
 }

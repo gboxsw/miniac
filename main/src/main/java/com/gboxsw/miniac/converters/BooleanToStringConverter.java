@@ -5,7 +5,7 @@ import com.gboxsw.miniac.Converter;
 /**
  * Boolean to string converter.
  */
-public class BooleanToTextConverter implements Converter<Boolean, byte[]> {
+public class BooleanToStringConverter implements Converter<Boolean, String> {
 
 	/**
 	 * Indicates whether an exception is thrown when conversion failed.
@@ -33,7 +33,7 @@ public class BooleanToTextConverter implements Converter<Boolean, byte[]> {
 	 *            true, if an exception is thrown when conversion failed, false,
 	 *            if the value is converted to null.
 	 */
-	public BooleanToTextConverter(String trueLiteral, String falseLiteral, boolean exceptionOnFail) {
+	public BooleanToStringConverter(String trueLiteral, String falseLiteral, boolean exceptionOnFail) {
 		if (trueLiteral == null) {
 			throw new NullPointerException("True cannot be represented as null.");
 		}
@@ -54,37 +54,37 @@ public class BooleanToTextConverter implements Converter<Boolean, byte[]> {
 	/**
 	 * Constructs a silent converter.
 	 */
-	public BooleanToTextConverter() {
+	public BooleanToStringConverter() {
 		this("true", "false", false);
 	}
 
 	@Override
-	public byte[] convertSourceToTarget(Boolean value) {
+	public String convertSourceToTarget(Boolean value) {
 		if (value == null) {
 			return null;
 		} else {
 			if (value) {
-				return trueLiteral.getBytes();
+				return trueLiteral;
 			} else {
-				return falseLiteral.getBytes();
+				return falseLiteral;
 			}
 		}
 	}
 
 	@Override
-	public Boolean convertTargetToSource(byte[] value) {
+	public Boolean convertTargetToSource(String value) {
 		if (value == null) {
 			return null;
 		}
 
-		String text = new String(value).trim();
-		if (trueLiteral.equalsIgnoreCase(text)) {
+		value = value.trim();
+		if (trueLiteral.equalsIgnoreCase(value)) {
 			return true;
-		} else if (falseLiteral.equalsIgnoreCase(text)) {
+		} else if (falseLiteral.equalsIgnoreCase(value)) {
 			return false;
 		} else {
 			if (exceptionOnFail) {
-				throw new RuntimeException("Conversion of \"" + text + "\" to a boolean value failed.");
+				throw new RuntimeException("Conversion of \"" + value + "\" to a boolean value failed.");
 			}
 
 			return null;
