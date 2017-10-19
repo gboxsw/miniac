@@ -13,14 +13,14 @@ import java.util.regex.Pattern;
 public abstract class DataItem<T> {
 
 	/**
-	 * Pattern defining a level of valid identifier of a data item.
-	 */
-	private static final Pattern ID_PATTERN = Pattern.compile("^[\\.a-zA-Z0-9_]+$");
-
-	/**
 	 * Logger.
 	 */
 	private static final Logger logger = Logger.getLogger(DataItem.class.getName());
+
+	/**
+	 * Pattern defining a level of valid identifier of a data item.
+	 */
+	private static final Pattern idPattern = Pattern.compile("^[\\.a-zA-Z0-9_]+$");
 
 	/**
 	 * States of a data item.
@@ -501,7 +501,7 @@ public abstract class DataItem<T> {
 
 			String[] parsedId = Application.parseTopicHierarchy(id);
 			for (String idPart : parsedId) {
-				if (!ID_PATTERN.matcher(idPart).matches()) {
+				if (!idPattern.matcher(idPart).matches()) {
 					return false;
 				}
 			}

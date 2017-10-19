@@ -719,7 +719,7 @@ public final class Application {
 	public String createUniqueId() {
 		synchronized (lock) {
 			uidCounter++;
-			return "uid@" + Long.toHexString(uidCounter);
+			return "uid." + Long.toHexString(uidCounter);
 		}
 	}
 

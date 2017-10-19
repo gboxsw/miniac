@@ -58,6 +58,16 @@ public class Converters {
 	public static final Converter<Double, byte[]> DOUBLE_TO_TEXTBYTES = chain(DOUBLE_TO_STRING, STRING_TO_TEXTBYTES);
 
 	/**
+	 * Default unidirectional object to string converter.
+	 */
+	public static final Converter<Object, String> OBJECT_TO_STRING = new ObjectToStringConverter();
+
+	/**
+	 * Default unidirectional object to text-bytes converter.
+	 */
+	public static final Converter<Object, byte[]> OBJECT_TO_TEXTBYTES = chain(OBJECT_TO_STRING, STRING_TO_TEXTBYTES);
+
+	/**
 	 * Returns the converter that realizes conversion in reverse direction
 	 * comparing to provided converter.
 	 * 
