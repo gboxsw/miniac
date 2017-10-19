@@ -45,6 +45,8 @@ public class Modules {
 	 * 
 	 * @param moduleClass
 	 *            the class of the module.
+	 * @param <T>
+	 *            the class of the module.
 	 * @return the registered instance.
 	 */
 	public static <T extends Module> T getInstance(Class<T> moduleClass) {
@@ -58,6 +60,8 @@ public class Modules {
 	 *            the class of the module.
 	 * @param id
 	 *            the identifier of the instance.
+	 * @param <T>
+	 *            the class of the module.
 	 * @return the registered instance.
 	 */
 	public static <T extends Module> T getInstance(Class<T> moduleClass, String id) {

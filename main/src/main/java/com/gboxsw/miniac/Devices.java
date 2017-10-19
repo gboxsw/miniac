@@ -1,8 +1,8 @@
 package com.gboxsw.miniac;
 
 /**
- * The collection of device instances. The class simplifies management of
- * device instances.
+ * The collection of device instances. The class simplifies management of device
+ * instances.
  */
 public class Devices {
 
@@ -45,6 +45,8 @@ public class Devices {
 	 * 
 	 * @param deviceClass
 	 *            the class of the device.
+	 * @param <T>
+	 *            the class of the device.
 	 * @return the registered instance.
 	 */
 	public static <T extends Device> T getInstance(Class<T> deviceClass) {
@@ -58,6 +60,8 @@ public class Devices {
 	 *            the class of the device.
 	 * @param id
 	 *            the identifier of the instance.
+	 * @param <T>
+	 *            the class of the device.
 	 * @return the registered instance.
 	 */
 	public static <T extends Device> T getInstance(Class<T> deviceClass, String id) {
