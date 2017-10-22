@@ -8,6 +8,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.gboxsw.miniac.utils.MonotonicClock;
+
 /**
  * The application.
  */
@@ -274,12 +276,12 @@ public final class Application {
 		private static final byte FIXED_DELAY = 3;
 
 		/**
-		 * The initial delay in nanoseconds.
+		 * The initial delay in milliseconds.
 		 */
 		private final long initialDelay;
 
 		/**
-		 * The period between repetitions in nanoseconds.
+		 * The period between repetitions in milliseconds.
 		 */
 		private final long period;
 
@@ -465,11 +467,6 @@ public final class Application {
 	private final Thread applicationThread;
 
 	/**
-	 * Start time of a monotonic nano time.
-	 */
-	private final long clockStartNano;
-
-	/**
 	 * Indicates that exit of the application is requested.
 	 */
 	private volatile boolean exitRequested;
@@ -498,9 +495,6 @@ public final class Application {
 	 * Constructs the application.
 	 */
 	public Application() {
-		// set start time
-		clockStartNano = System.nanoTime();
-
 		// construct the serialization and event handling thread
 		applicationThread = new Thread(new Runnable() {
 			@Override
@@ -1115,7 +1109,7 @@ public final class Application {
 	 */
 	public Cancellable publishLater(Message message, long delay, TimeUnit unit) {
 		return enqueueScheduledAction(createPublishAction(message),
-				new Schedule(unit.toNanos(delay), 0, Schedule.NONE));
+				new Schedule(unit.toMillis(delay), 0, Schedule.NONE));
 	}
 
 	/**
@@ -1136,7 +1130,7 @@ public final class Application {
 	 */
 	public Cancellable publishAtFixedRate(Message message, long initialDelay, long period, TimeUnit unit) {
 		return enqueueScheduledAction(createPublishAction(message),
-				new Schedule(unit.toNanos(initialDelay), unit.toNanos(period), Schedule.FIXED_RATE));
+				new Schedule(unit.toMillis(initialDelay), unit.toMillis(period), Schedule.FIXED_RATE));
 	}
 
 	/**
@@ -1157,7 +1151,7 @@ public final class Application {
 	 */
 	public Cancellable publishWithFixedDelay(Message message, long initialDelay, long delay, TimeUnit unit) {
 		return enqueueScheduledAction(createPublishAction(message),
-				new Schedule(unit.toNanos(initialDelay), unit.toNanos(delay), Schedule.FIXED_DELAY));
+				new Schedule(unit.toMillis(initialDelay), unit.toMillis(delay), Schedule.FIXED_DELAY));
 	}
 
 	/**
@@ -1184,7 +1178,7 @@ public final class Application {
 		}
 
 		return enqueueScheduledAction(createPublishFromFactoryAction(messageFactory),
-				new Schedule(unit.toNanos(initialDelay), unit.toNanos(period), Schedule.FIXED_RATE));
+				new Schedule(unit.toMillis(initialDelay), unit.toMillis(period), Schedule.FIXED_RATE));
 	}
 
 	/**
@@ -1211,7 +1205,7 @@ public final class Application {
 		}
 
 		return enqueueScheduledAction(createPublishFromFactoryAction(messageFactory),
-				new Schedule(unit.toNanos(initialDelay), unit.toNanos(delay), Schedule.FIXED_DELAY));
+				new Schedule(unit.toMillis(initialDelay), unit.toMillis(delay), Schedule.FIXED_DELAY));
 	}
 
 	/**
@@ -1229,7 +1223,7 @@ public final class Application {
 	 */
 	public Cancellable invokeLater(Runnable runnable, long delay, TimeUnit unit) {
 		return enqueueScheduledAction(createActionWithRunnable(runnable),
-				new Schedule(unit.toNanos(delay), 0, Schedule.NONE));
+				new Schedule(unit.toMillis(delay), 0, Schedule.NONE));
 	}
 
 	/**
@@ -1255,7 +1249,7 @@ public final class Application {
 		}
 
 		return enqueueScheduledAction(createActionWithRunnable(runnable),
-				new Schedule(unit.toNanos(initialDelay), unit.toNanos(period), Schedule.FIXED_RATE));
+				new Schedule(unit.toMillis(initialDelay), unit.toMillis(period), Schedule.FIXED_RATE));
 	}
 
 	/**
@@ -1281,7 +1275,7 @@ public final class Application {
 		}
 
 		return enqueueScheduledAction(createActionWithRunnable(runnable),
-				new Schedule(unit.toNanos(initialDelay), unit.toNanos(delay), Schedule.FIXED_DELAY));
+				new Schedule(unit.toMillis(initialDelay), unit.toMillis(delay), Schedule.FIXED_DELAY));
 	}
 
 	/**
@@ -1703,11 +1697,11 @@ public final class Application {
 	 */
 	private void runEventLoop() {
 		// execution loop
-		long now = System.nanoTime() - clockStartNano;
+		long now = MonotonicClock.currentTimeMillis();
 		long processedActionCount = 0;
 
 		final boolean autosaveEnabled = (persistentStorage != null) && (autosavePeriodInSeconds > 0);
-		final long autosaveNanoPeriod = autosaveEnabled ? autosavePeriodInSeconds * (long) 1_000_000_000 : 0;
+		final long autosaveMillisPeriod = autosaveEnabled ? autosavePeriodInSeconds * 1_000 : 0;
 		long lastSave = now;
 
 		while (!exitRequested) {
@@ -1717,7 +1711,7 @@ public final class Application {
 			synchronized (queueLock) {
 				// handle scheduled actions first
 				if (!scheduledActionQueue.isEmpty()) {
-					now = System.nanoTime() - clockStartNano;
+					now = MonotonicClock.currentTimeMillis();
 					ScheduledAction queueHeadAction = scheduledActionQueue.peek();
 					if ((now > queueHeadAction.executionTime)
 							&& (queueHeadAction.precedingActionCount <= processedActionCount)) {
@@ -1753,9 +1747,9 @@ public final class Application {
 							if (scheduledActionQueue.isEmpty()) {
 								queueLock.wait();
 							} else {
-								long nanoDelay = scheduledActionQueue.peek().executionTime - now;
-								if (nanoDelay > 0) {
-									TimeUnit.NANOSECONDS.timedWait(queueLock, nanoDelay);
+								long millisDelay = scheduledActionQueue.peek().executionTime - now;
+								if (millisDelay > 0) {
+									TimeUnit.MILLISECONDS.timedWait(queueLock, millisDelay);
 								}
 							}
 						} catch (InterruptedException ignore) {
@@ -1780,8 +1774,8 @@ public final class Application {
 
 			// save state (if necessary)
 			if (autosaveEnabled) {
-				now = System.nanoTime() - clockStartNano;
-				if (now - lastSave > autosaveNanoPeriod) {
+				now = MonotonicClock.currentTimeMillis();
+				if (now - lastSave > autosaveMillisPeriod) {
 					saveState();
 					lastSave = now;
 				}
@@ -1898,7 +1892,7 @@ public final class Application {
 	 *         action.
 	 */
 	private Cancellable enqueueScheduledAction(Action action, Schedule schedule) {
-		long firstExecutionTime = (System.nanoTime() - clockStartNano) + schedule.initialDelay;
+		long firstExecutionTime = MonotonicClock.currentTimeMillis() + schedule.initialDelay;
 		synchronized (queueLock) {
 			scheduledActionQueue.offer(new ScheduledAction(firstExecutionTime, action, schedule, totalActionCount));
 			queueLock.notifyAll();
