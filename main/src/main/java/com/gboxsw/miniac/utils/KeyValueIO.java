@@ -303,6 +303,19 @@ public class KeyValueIO {
 			return Float.parseFloat(value);
 		}
 
+		if (type == Boolean.class) {
+			value = value.trim().toLowerCase();
+			if ("yes".equals(value) || "true".equals(value) || "1".equals(value)) {
+				return true;
+			}
+
+			if ("no".equals(value) || "false".equals(value) || "0".equals(value)) {
+				return false;
+			}
+
+			return Boolean.parseBoolean(value);
+		}
+
 		throw new UnsupportedOperationException("Conversion to " + type.getName() + " is not supported.");
 	}
 }

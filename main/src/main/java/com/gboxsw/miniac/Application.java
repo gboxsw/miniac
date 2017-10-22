@@ -839,6 +839,38 @@ public final class Application {
 	}
 
 	/**
+	 * Returns value of property converted to a boolean.
+	 * 
+	 * @param name
+	 *            the name of property.
+	 * @param defaultValue
+	 *            the default value if conversion failed.
+	 * @return the value converted to boolean or the default value if conversion
+	 *         failed.
+	 */
+	public boolean getPropertyAsBoolean(String name, boolean defaultValue) {
+		Object value = getProperty(name);
+		if (value == null) {
+			return defaultValue;
+		}
+
+		if (value instanceof Boolean) {
+			return ((Boolean) value).booleanValue();
+		}
+
+		String val = value.toString().trim().toLowerCase();
+		if ("yes".equals(val) || "true".equals(val) || "1".equals(val)) {
+			return true;
+		}
+
+		if ("no".equals(val) || "false".equals(val) || "0".equals(val)) {
+			return false;
+		}
+
+		return defaultValue;
+	}
+
+	/**
 	 * Subscribes to a topic.
 	 * 
 	 * @param topicFilter
