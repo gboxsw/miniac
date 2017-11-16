@@ -9,7 +9,7 @@ import com.gboxsw.miniac.*;
  * @param <T>
  *            the value type of data item.
  */
-public class ChangeRequestingMessageListener<T> implements MessageListener {
+public class DataItemChangeHandler<T> implements MessageListener {
 
 	/**
 	 * The converter utilized to convert message payload to requested value of
@@ -41,7 +41,7 @@ public class ChangeRequestingMessageListener<T> implements MessageListener {
 	 *            if set to true, when result of conversion is null, then no
 	 *            change request is generated.
 	 */
-	public ChangeRequestingMessageListener(DataItem<T> dataItem, Converter<byte[], T> converter,
+	public DataItemChangeHandler(DataItem<T> dataItem, Converter<byte[], T> converter,
 			boolean ignoreNullValues) {
 		if (dataItem == null) {
 			throw new NullPointerException("Data item cannot be null.");
@@ -69,7 +69,7 @@ public class ChangeRequestingMessageListener<T> implements MessageListener {
 	 *            the converter that converts message payload to requested value
 	 *            of data item.
 	 */
-	public ChangeRequestingMessageListener(DataItem<T> dataItem, Converter<byte[], T> converter) {
+	public DataItemChangeHandler(DataItem<T> dataItem, Converter<byte[], T> converter) {
 		this(dataItem, converter, true);
 	}
 

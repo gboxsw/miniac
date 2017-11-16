@@ -28,17 +28,17 @@ public final class Application {
 	/**
 	 * Identifier of system gateway.
 	 */
-	public static final String SYSTEM_GATEWAY = "$SYS";
+	public static final String SYSTEM_GATEWAY = SystemGateway.DEFAULT_ID;
 
 	/**
 	 * Recommended name for gateway with data items.
 	 */
-	public static final String DATA_GATEWAY = "data";
+	public static final String DATA_GATEWAY = DataGateway.DEFAULT_ID;
 
 	/**
 	 * Recommended name for local (echo) gateway.
 	 */
-	public static final String LOCAL_GATEWAY = "local";
+	public static final String LOCAL_GATEWAY = EchoGateway.DEFAULT_ID;
 
 	/**
 	 * Default auto-save period in seconds (30 minutes).

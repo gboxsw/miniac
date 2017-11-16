@@ -7,6 +7,11 @@ import java.util.Map;
  */
 public class EchoGateway extends Gateway {
 
+	/**
+	 * Default (pre-defined) name of the gateway.
+	 */
+	public static final String DEFAULT_ID = "local";
+	
 	@Override
 	protected void onAddTopicFilter(String topicFilter) {
 		// nothing to do

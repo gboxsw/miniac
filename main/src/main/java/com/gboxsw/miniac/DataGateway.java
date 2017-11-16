@@ -11,6 +11,11 @@ import com.gboxsw.miniac.Application.TopicFilter;
 public final class DataGateway extends Gateway {
 
 	/**
+	 * Default (pre-defined) name of the gateway.
+	 */
+	public static final String DEFAULT_ID = "data";
+	
+	/**
 	 * Logger.
 	 */
 	private static final Logger logger = Logger.getLogger(DataGateway.class.getName());

@@ -29,6 +29,21 @@ class SingletonHelper {
 	}
 
 	/**
+	 * Returns whether the class is annotated with {@link MultiInstance}.
+	 * 
+	 * @param aClass
+	 *            the class.
+	 * @return true, if the class is annotated, false otherwise.
+	 */
+	public static boolean isMultiInstanceClass(Class<?> aClass) {
+		if (aClass == null) {
+			throw new NullPointerException("The class cannot be null.");
+		}
+
+		return aClass.isAnnotationPresent(MultiInstance.class);
+	}
+
+	/**
 	 * Process notification about new instance.
 	 * 
 	 * @param instance

@@ -94,8 +94,11 @@ class InstanceRegister<T> {
 			throw new NullPointerException("No instance to register.");
 		}
 
+		Class<?> classOfInstance = instance.getClass();
+		checkAnnotations(classOfInstance);
+
 		synchronized (lock) {
-			InstanceGroup<T> instanceGroup = instanceGroups.get(instance.getClass());
+			InstanceGroup<T> instanceGroup = instanceGroups.get(classOfInstance);
 			if (instanceGroup != null) {
 				if (instanceGroup.instance == instance) {
 					return;
@@ -105,7 +108,7 @@ class InstanceRegister<T> {
 						"The instance cannot be registered. Another instance/instances registered.");
 			}
 
-			instanceGroups.put(instance.getClass(), new InstanceGroup<T>(instance));
+			instanceGroups.put(classOfInstance, new InstanceGroup<T>(instance));
 		}
 	}
 
@@ -129,6 +132,7 @@ class InstanceRegister<T> {
 		}
 
 		Class<?> classOfInstance = instance.getClass();
+		checkAnnotations(classOfInstance);
 		if (SingletonHelper.isSingletonClass(classOfInstance)) {
 			throw new IllegalArgumentException(
 					"The class " + classOfInstance.getName() + " does not allow multiple instances.");
@@ -260,5 +264,24 @@ class InstanceRegister<T> {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Checks whether class annotation are non-conflicting and present (if
+	 * required).
+	 * 
+	 * @param aClass
+	 *            the class.
+	 * 
+	 * @throws IllegalArgumentException
+	 *             if annotation check failed.
+	 */
+	private void checkAnnotations(Class<?> aClass) {
+		boolean singleton = SingletonHelper.isSingletonClass(aClass);
+		boolean multiInstance = SingletonHelper.isMultiInstanceClass(aClass);
+		if (singleton && multiInstance) {
+			throw new IllegalArgumentException("The class " + aClass.getName()
+					+ " is annotated as a singleton class and also as a multi-instance class.");
+		}
 	}
 }

@@ -8,6 +8,11 @@ import java.util.Map;
 final class SystemGateway extends Gateway {
 
 	/**
+	 * Default (pre-defined) name of the gateway.
+	 */
+	public static final String DEFAULT_ID = "$SYS";
+	
+	/**
 	 * Allowed system commands.
 	 */
 	private static final String[] allowedCommands = { "exit", "save" };

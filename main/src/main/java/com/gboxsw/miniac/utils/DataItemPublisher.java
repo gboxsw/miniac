@@ -1,6 +1,13 @@
-package com.gboxsw.miniac;
+package com.gboxsw.miniac.utils;
 
 import java.util.logging.*;
+
+import com.gboxsw.miniac.Application;
+import com.gboxsw.miniac.Converter;
+import com.gboxsw.miniac.DataItem;
+import com.gboxsw.miniac.Message;
+import com.gboxsw.miniac.SimpleMessageListener;
+import com.gboxsw.miniac.Subscription;
 
 /**
  * Automatic publisher of data item values.
