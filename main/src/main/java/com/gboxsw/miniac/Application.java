@@ -66,6 +66,12 @@ public final class Application {
 	private static final Logger logger = Logger.getLogger(Application.class.getName());
 
 	/**
+	 * Default instance of the application. This is a convenience instance for
+	 * programs with single instance of the application.
+	 */
+	private static final Application defaultInstance = createSimpleApplication();
+
+	/**
 	 * Message listener that encapsulates a {@link SimpleMessageListener}.
 	 */
 	private static final class WrappingSimpleMessageListener implements MessageListener {
@@ -2232,5 +2238,15 @@ public final class Application {
 		application.addGateway(DATA_GATEWAY, new DataGateway());
 		application.addGateway(LOCAL_GATEWAY, new EchoGateway());
 		return application;
+	}
+
+	/**
+	 * Returns pre-created default instance of simple an application that can be
+	 * used in programs with single instance of application.
+	 * 
+	 * @return the default instance.
+	 */
+	public static Application getDefaultInstance() {
+		return defaultInstance;
 	}
 }
